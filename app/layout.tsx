@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import './globals.css';
 import { Header } from './components/header';
 import { I18nProvider } from './components/i18n-provider';

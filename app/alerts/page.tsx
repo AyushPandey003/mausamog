@@ -22,14 +22,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function AlertsPage() {
+export default async function AlertsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ city?: string }>;
+}) {
   const user = await getSessionUser();
   if (!user) {
     redirect('/login');
   }
 
   const plan = await getLatestPlan(user.id);
-  const city = plan?.input.city ?? 'Bengaluru';
+  const resolvedParams = await searchParams;
+  const city = resolvedParams.city ?? plan?.input.city ?? 'Bengaluru';
   const [{ peerReports }, alerts, resources] = await Promise.all([
     getPeerAlertData(city),
     getAlerts(city),

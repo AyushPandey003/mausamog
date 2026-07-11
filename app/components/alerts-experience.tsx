@@ -122,8 +122,8 @@ export function AlertsExperience({
   }
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.25fr_0.75fr] lg:px-8">
-      <section className="card min-h-[480px] overflow-hidden bg-[linear-gradient(135deg,#eaf4ff,#f7f9fb)] shadow-md">
+    <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.45fr_0.55fr] lg:px-8">
+      <section className="card min-h-[640px] overflow-hidden bg-[linear-gradient(135deg,#eaf4ff,#f7f9fb)] shadow-md">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--sky)] font-semibold">{t('alertsPage.interactiveRiskMap')}</p>
@@ -131,6 +131,26 @@ export function AlertsExperience({
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
               {t('alertsPage.mapIntro', { city })}
             </p>
+            
+            {/* Dynamic City Selector */}
+            <div className="mt-4 flex items-center gap-2.5">
+              <label className="text-[10px] font-mono uppercase tracking-[0.1em] text-[color:var(--muted)]">{t('common.city')}</label>
+              <select
+                value={city}
+                onChange={(e) => {
+                  window.location.href = `/alerts?city=${encodeURIComponent(e.target.value)}`;
+                }}
+                className="rounded-xl border border-[color:var(--outline-variant)] bg-white px-3 py-1.5 text-xs font-semibold text-[color:var(--foreground)] shadow-sm focus:outline-none focus:ring-1 focus:ring-[color:var(--sky)] cursor-pointer"
+              >
+                <option value="Bengaluru">Bengaluru</option>
+                <option value="Mumbai">Mumbai</option>
+                <option value="Chennai">Chennai</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Kolkata">Kolkata</option>
+                <option value="Hyderabad">Hyderabad</option>
+                <option value="Pune">Pune</option>
+              </select>
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em]">
             <div className="rounded-2xl border border-[color:var(--outline-variant)] bg-white px-3 py-2 text-[color:var(--muted)]">{stats.alertCount} {t('alertsPage.alerts')}</div>
@@ -146,7 +166,7 @@ export function AlertsExperience({
           <button type="button" onClick={() => setShowPeerReports((value) => !value)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showPeerReports ? 'bg-emerald-600 text-white' : 'border border-[color:var(--outline-variant)] bg-white text-[color:var(--muted)]'}`}>{t('alertsPage.peerReports')}</button>
         </div>
 
-        <div className="mt-6 h-full min-h-[420px] overflow-hidden rounded-2xl border border-[color:var(--outline-variant)]">
+        <div className="mt-6 h-full min-h-[580px] overflow-hidden rounded-2xl border border-[color:var(--outline-variant)]">
           <AlertsMap
             city={city}
             cityCoordinates={cityCoordinates}

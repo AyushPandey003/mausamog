@@ -144,6 +144,11 @@ export function AlertsMap({
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
     instanceRef.current = map;
 
+    // Force recalculation of container size after mounting
+    setTimeout(() => {
+      map.resize();
+    }, 150);
+
     // Handle map clicking to select report location
     map.on('click', (e) => {
       // Exclude clicks on markers/popups by checking if the original click target is the canvas
@@ -158,6 +163,7 @@ export function AlertsMap({
     });
 
     map.on('load', () => {
+      map.resize();
       map.addSource('risk-zone', {
         type: 'geojson',
         data: {
@@ -407,7 +413,7 @@ export function AlertsMap({
   const hasToken = Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
 
   return (
-    <div className="relative h-[420px] overflow-hidden rounded-3xl border border-[color:var(--outline-variant)] bg-[radial-gradient(circle_at_top_left,#dbeafe,transparent_35%),radial-gradient(circle_at_bottom_right,#fed7aa,transparent_25%),white]">
+    <div className="relative h-[580px] overflow-hidden rounded-3xl border border-[color:var(--outline-variant)] bg-[radial-gradient(circle_at_top_left,#dbeafe,transparent_35%),radial-gradient(circle_at_bottom_right,#fed7aa,transparent_25%),white]">
       {hasToken ? (
         <div ref={mapRef} className="h-full w-full" aria-label="Monsoon risk map" />
       ) : (
