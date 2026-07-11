@@ -1,0 +1,29 @@
+[
+  {
+    "city": "Bengaluru",
+    "name": "BBMP Community Relief Center",
+    "kind": "shelter",
+    "address": "Ward Community Hall, Koramangala",
+    "phone": "080-22975555",
+    "openStatus": "24x7",
+    "meta": { "capacity": "120", "support": "Food, charging, first aid" }
+  },
+  {
+    "city": "Bengaluru",
+    "name": "St. John’s Emergency Support Desk",
+    "kind": "hospital",
+    "address": "Sarjapur Main Road",
+    "phone": "080-22065000",
+    "openStatus": "24x7",
+    "meta": { "support": "Emergency care", "triage": "Available" }
+  },
+  {
+    "city": "Mumbai",
+    "name": "Municipal Flood Relief Helpdesk",
+    "kind": "helpline",
+    "address": "BMC Disaster Cell",
+    "phone": "1916",
+    "openStatus": "24x7",
+    "meta": { "support": "Flood assistance", "language": "Marathi, Hindi, English" }
+  }
+]

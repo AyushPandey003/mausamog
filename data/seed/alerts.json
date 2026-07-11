@@ -1,0 +1,26 @@
+[
+  {
+    "city": "Bengaluru",
+    "severity": "moderate",
+    "title": "Waterlogging risk near low-lying junctions",
+    "summary": "Heavy evening rain may slow commutes and cause short-term waterlogging in underpasses and market roads.",
+    "source": "seeded",
+    "meta": { "zone": "South Bengaluru", "window": "6 PM - 10 PM" }
+  },
+  {
+    "city": "Mumbai",
+    "severity": "high",
+    "title": "Coastal flood watch and rail delays",
+    "summary": "Strong rainfall bands and high tide increase flooding risk in coastal stretches and may disrupt suburban travel.",
+    "source": "seeded",
+    "meta": { "zone": "Western line", "window": "Next 12 hours" }
+  },
+  {
+    "city": "Chennai",
+    "severity": "moderate",
+    "title": "Localized thunderstorm advisory",
+    "summary": "Residents should secure loose objects, charge devices, and avoid unnecessary travel during peak showers.",
+    "source": "seeded",
+    "meta": { "zone": "Central Chennai", "window": "Afternoon" }
+  }
+]

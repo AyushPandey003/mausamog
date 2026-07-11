@@ -1,0 +1,7 @@
+[
+  { "city": "Bengaluru", "category": "documents", "itemKey": "ids", "label": "Keep Aadhaar, ID cards, and insurance documents in a waterproof pouch", "done": false, "priority": "high" },
+  { "city": "Bengaluru", "category": "medical", "itemKey": "meds", "label": "Store 3-5 days of essential medicines and a basic first-aid kit", "done": false, "priority": "high" },
+  { "city": "Bengaluru", "category": "power", "itemKey": "charge", "label": "Fully charge phones, power banks, and emergency torches", "done": false, "priority": "high" },
+  { "city": "Bengaluru", "category": "home", "itemKey": "drains", "label": "Clear balcony drains and move electronics away from floor level", "done": false, "priority": "medium" },
+  { "city": "Bengaluru", "category": "evacuation", "itemKey": "contacts", "label": "Share emergency contacts and nearest shelter route with family", "done": false, "priority": "medium" }
+]

@@ -1,0 +1,3 @@
+# GenAI Services Used in the Submission
+
+Used **Google Gemini API (gemini-2.5-flash)** as the primary GenAI service in the server-side generation flows. Gemini is used to create personalized monsoon preparedness plans, family-specific recommendations, travel advisories, and multilingual citizen-assistant responses based on the user's location, household details, travel needs, safety concerns, and language preference. Also used **Google Stitch** as the UI and design inspiration source for the visual system, layout direction, dashboard structure, alert presentation, and overall experience design of the application.

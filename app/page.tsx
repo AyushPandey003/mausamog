@@ -1,65 +1,184 @@
-import Image from "next/image";
+import { getHomeData, toggleChecklistAction } from '@/app/actions';
+import { PlanForm } from '@/app/components/plan-form';
 
-export default function Home() {
+function severityTone(severity: string) {
+  if (severity === 'high') return 'border-red-200 bg-red-50 text-red-800';
+  if (severity === 'moderate') return 'border-amber-200 bg-amber-50 text-amber-900';
+  return 'border-sky-200 bg-sky-50 text-sky-900';
+}
+
+export default async function HomePage() {
+  const { city, plan, alerts, checklist, resources, user } = await getHomeData();
+
+  const completedCount = checklist.filter((item) => item.done).length;
+  const totalCount = checklist.length;
+  const readinessScore = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      {/* Top Banner section */}
+      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="card bg-[linear-gradient(135deg,#131b2e,#1c2940)] text-white relative overflow-hidden flex flex-col justify-between p-6 shadow-lg min-h-[300px]">
+          {/* Abstract weather icon background */}
+          <div className="absolute -top-10 -right-10 opacity-10 pointer-events-none">
+            <span className="text-9xl">⛈️</span>
+          </div>
+
+          <div className="relative z-10">
+            <p className="font-mono text-xs uppercase tracking-[0.22em] text-[#ffb690]">Sentinel Flux Command Center</p>
+            <h2 className="mt-3 text-3xl font-extrabold leading-tight">
+              Hello, {user?.fullName || 'Citizen'}!
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+              MausamOG combines preparedness planning, localized alerts, multilingual assistant, checklist progress, and travel guidance in one GenAI-powered interface.
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-3 relative z-10">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col justify-between">
+              <span className="text-xs uppercase tracking-[0.16em] text-slate-400">Readiness</span>
+              <div className="mt-2 flex items-baseline gap-1">
+                <strong className="text-3xl font-bold">{readinessScore}%</strong>
+                <span className="text-xs text-slate-400">score</span>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col justify-between">
+              <span className="text-xs uppercase tracking-[0.16em] text-slate-400">Current City</span>
+              <strong className="mt-2 block text-2xl font-bold tracking-tight">{city}</strong>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col justify-between">
+              <span className="text-xs uppercase tracking-[0.16em] text-slate-400">Active Alerts</span>
+              <strong className="mt-2 block text-2xl font-bold text-amber-400">{alerts.length}</strong>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        
+        <PlanForm />
+      </section>
+
+      {/* Bento grid detailed modules */}
+      <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
+        <div className="grid gap-6">
+          {/* AI Plan Section */}
+          <article className="card shadow-md border-[color:var(--outline-variant)] bg-white p-6 relative overflow-hidden">
+            <div className="flex items-center justify-between gap-4 border-b border-[color:var(--outline-variant)]/40 pb-4">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--accent)] font-semibold">AI Preparedness Plan</p>
+                <h3 className="mt-2 text-xl font-bold text-[color:var(--foreground)]">
+                  {plan?.plan.riskSummary ?? 'Configure your profile above to generate a custom AI monsoon plan.'}
+                </h3>
+              </div>
+              <span className="rounded-full border border-[color:var(--outline-variant)] bg-[color:var(--surface-soft)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)]">
+                {plan?.source ?? 'pending'}
+              </span>
+            </div>
+            {plan ? (
+              <div className="mt-5 grid gap-6 md:grid-cols-2">
+                <div className="bg-[color:var(--surface-soft)]/50 rounded-2xl p-4 border border-[color:var(--outline-variant)]/30">
+                  <h4 className="font-bold text-sm text-[color:var(--foreground)] flex items-center gap-1.5 mb-3">
+                    <span>📋</span> Before Monsoon
+                  </h4>
+                  <ul className="space-y-2 text-sm text-[color:var(--muted)]">
+                    {plan.plan.beforeMonsoon.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="text-[color:var(--accent)]">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-[color:var(--surface-soft)]/50 rounded-2xl p-4 border border-[color:var(--outline-variant)]/30">
+                  <h4 className="font-bold text-sm text-[color:var(--foreground)] flex items-center gap-1.5 mb-3">
+                    <span>🧰</span> Emergency Kit
+                  </h4>
+                  <ul className="space-y-2 text-sm text-[color:var(--muted)]">
+                    {plan.plan.emergencyKit.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="text-[color:var(--accent)]">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
+          </article>
+
+          {/* Checklist Progress Tracker */}
+          <article className="card shadow-md">
+            <div className="flex items-center justify-between gap-4 border-b border-[color:var(--outline-variant)]/40 pb-4">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--sky)] font-semibold">Interactive Checklist</p>
+                <h3 className="mt-2 text-xl font-bold text-[color:var(--foreground)]">Emergency Readiness Tracker</h3>
+              </div>
+              <span className="rounded-full bg-[color:var(--surface-soft)] px-3 py-1.5 text-sm font-semibold text-[color:var(--muted)]">
+                {completedCount}/{totalCount} done
+              </span>
+            </div>
+            <div className="mt-5 grid gap-3">
+              {checklist.length === 0 ? (
+                <p className="text-sm text-[color:var(--muted)] py-4 text-center">No checklist items generated yet. Generate your preparedness plan to get started.</p>
+              ) : (
+                checklist.map((item) => (
+                  <form key={item.itemKey} action={toggleChecklistAction} className="flex items-start gap-3 rounded-2xl border border-[color:var(--outline-variant)]/60 bg-[color:var(--surface-soft)]/40 p-4 transition hover:bg-[color:var(--surface-soft)]">
+                    <input type="hidden" name="city" value={item.city} />
+                    <input type="hidden" name="itemKey" value={item.itemKey} />
+                    <button className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border text-xs transition-colors ${item.done ? 'border-[color:var(--accent)] bg-[color:var(--accent)] text-white' : 'border-[color:var(--outline)] bg-white text-transparent hover:border-[color:var(--accent)]'}`}>✓</button>
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${item.done ? 'text-[color:var(--outline)] line-through' : 'text-[color:var(--foreground)]'}`}>{item.label}</p>
+                      <p className="mt-1 text-[10px] font-mono uppercase tracking-[0.1em] text-[color:var(--muted)]">{item.category} · {item.priority}</p>
+                    </div>
+                  </form>
+                ))
+              )}
+            </div>
+          </article>
         </div>
-      </main>
-    </div>
+
+        {/* Sidebar Info Panels */}
+        <aside className="grid gap-6">
+          {/* Alerts Panel */}
+          <section className="card shadow-md">
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--accent)] font-semibold mb-4">Live Alerts</p>
+            <div className="space-y-3">
+              {alerts.length === 0 ? (
+                <p className="text-sm text-[color:var(--muted)] py-2">No active alerts for {city}.</p>
+              ) : (
+                alerts.map((alert) => (
+                  <div key={`${alert.city}-${alert.title}`} className={`rounded-2xl border p-4 shadow-sm transition hover:shadow-md ${severityTone(alert.severity)}`}>
+                    <h4 className="font-bold text-sm">{alert.title}</h4>
+                    <p className="mt-2 text-xs leading-5 opacity-90">{alert.summary}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Local Resources Panel */}
+          <section className="card shadow-md">
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--sky)] font-semibold mb-4">Community Assistance Hub</p>
+            <div className="space-y-3">
+              {resources.length === 0 ? (
+                <p className="text-sm text-[color:var(--muted)] py-2">No emergency resources cataloged for {city}.</p>
+              ) : (
+                resources.map((resource) => (
+                  <div key={`${resource.city}-${resource.name}`} className="rounded-2xl border border-[color:var(--outline-variant)]/60 bg-[color:var(--surface-soft)]/30 p-4 transition hover:bg-[color:var(--surface-soft)]/60">
+                    <h4 className="font-bold text-sm text-[color:var(--foreground)]">{resource.name}</h4>
+                    <p className="mt-1 text-xs text-[color:var(--muted)]">{resource.kind} · {resource.openStatus}</p>
+                    <p className="mt-2 text-xs text-[color:var(--muted)] leading-relaxed">{resource.address}</p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-xs font-mono font-semibold text-[color:var(--foreground)]">{resource.phone}</span>
+                      <a href={`tel:${resource.phone}`} className="rounded-lg bg-[color:var(--surface-soft)] hover:bg-[color:var(--outline-variant)]/30 px-2 py-1 text-[10px] font-bold text-[color:var(--foreground)] transition">
+                        Call
+                      </a>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
   );
 }
