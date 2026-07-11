@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getAssistantData } from '@/app/actions';
 import { getLatestPlan } from '@/lib/repository';
 import { AssistantForm } from '@/app/components/assistant-form';
@@ -44,7 +45,14 @@ export default async function AssistantPage() {
         <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--sky)] font-semibold border-b border-[color:var(--outline-variant)]/40 pb-4 mb-4">{t('assistant.history')}</p>
         <div className="space-y-4 max-h-[560px] overflow-y-auto pr-1">
           {messages.length === 0 ? (
-            <p className="text-sm text-[color:var(--muted)] py-4 text-center">{t('assistant.empty')}</p>
+            <div className="rounded-2xl border border-dashed border-[color:var(--outline-variant)] bg-[color:var(--surface-soft)]/35 p-5 text-center">
+              <p className="text-sm text-[color:var(--muted)]">{t('assistant.empty')}</p>
+              <div className="mt-4 flex justify-center">
+                <Link href="/checklist" className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                  Open checklist
+                </Link>
+              </div>
+            </div>
           ) : (
             messages.map((message) => (
               <div key={message.id} className="rounded-2xl border border-[color:var(--outline-variant)]/60 bg-[color:var(--surface-soft)]/45 p-4 transition hover:bg-[color:var(--surface-soft)]">

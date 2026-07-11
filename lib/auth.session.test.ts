@@ -50,4 +50,13 @@ describe('getSessionUser', () => {
     expect(mocks.getUserByIdMock).toHaveBeenCalledWith('user-1');
     expect(SESSION_COOKIE_NAME).toBe('session_token');
   });
+
+  it('returns null when the session exists but the user record is missing', async () => {
+    mocks.cookiesMock.mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'token-123' }) });
+    mocks.getSessionByTokenHashMock.mockResolvedValue({ userId: 'user-1' });
+    mocks.getUserByIdMock.mockResolvedValue(null);
+
+    await expect(getSessionUser()).resolves.toBeNull();
+    expect(mocks.getUserByIdMock).toHaveBeenCalledWith('user-1');
+  });
 });

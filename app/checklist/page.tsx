@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { toggleChecklistAction } from '@/app/actions';
 import { getChecklist, getLatestPlan } from '@/lib/repository';
 import { getSessionUser } from '@/lib/auth';
@@ -43,7 +44,14 @@ export default async function ChecklistPage() {
         </p>
         <div className="mt-6 grid gap-3">
           {checklist.length === 0 ? (
-            <p className="text-sm text-[color:var(--muted)] py-4 text-center">{t('checklist.empty')}</p>
+            <div className="rounded-2xl border border-dashed border-[color:var(--outline-variant)] bg-[color:var(--surface-soft)]/35 p-5 text-center">
+              <p className="text-sm text-[color:var(--muted)]">{t('checklist.empty')}</p>
+              <div className="mt-4 flex justify-center">
+                <Link href="/" className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                  Generate preparedness plan
+                </Link>
+              </div>
+            </div>
           ) : (
             checklist.map((item) => (
               <form key={item.itemKey} action={toggleChecklistAction} className="flex items-start gap-3 rounded-2xl border border-[color:var(--outline-variant)]/50 bg-[color:var(--surface-soft)]/30 p-4 transition-all duration-300 hover:bg-[color:var(--surface-soft)]/60 hover:-translate-y-0.5 hover:shadow-sm hover:border-[color:var(--accent)]/30">

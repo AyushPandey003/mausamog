@@ -133,7 +133,14 @@ export default async function HomePage() {
             </div>
             <div className="mt-5 grid gap-3">
               {checklist.length === 0 ? (
-                <p className="text-sm text-[color:var(--muted)] py-4 text-center">{t('dashboard.noChecklist')}</p>
+                <div className="rounded-2xl border border-dashed border-[color:var(--outline-variant)] bg-[color:var(--surface-soft)]/35 p-5 text-center">
+                  <p className="text-sm text-[color:var(--muted)]">{t('dashboard.noChecklist')}</p>
+                  <div className="mt-4 flex justify-center">
+                    <Link href="/" className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                      Generate preparedness plan
+                    </Link>
+                  </div>
+                </div>
               ) : (
                 checklist.map((item) => (
                   <form key={item.itemKey} action={toggleChecklistAction} className="flex items-start gap-3 rounded-2xl border border-[color:var(--outline-variant)]/50 bg-[color:var(--surface-soft)]/30 p-4 transition-all duration-300 hover:bg-[color:var(--surface-soft)]/60 hover:-translate-y-0.5 hover:shadow-sm hover:border-[color:var(--accent)]/30">
@@ -160,7 +167,14 @@ export default async function HomePage() {
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--accent)] font-semibold mb-4">{t('dashboard.liveAlerts')}</p>
             <div className="space-y-3">
               {alerts.length === 0 ? (
-                <p className="text-sm text-[color:var(--muted)] py-2">{t('dashboard.noAlerts', { city })}</p>
+                <div className="rounded-2xl border border-dashed border-[color:var(--outline-variant)] bg-[color:var(--surface-soft)]/35 p-4 text-center">
+                  <p className="text-sm text-[color:var(--muted)]">{t('dashboard.noAlerts', { city })}</p>
+                  <div className="mt-3 flex justify-center">
+                    <Link href="/alerts" className="rounded-xl bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                      Open alerts map
+                    </Link>
+                  </div>
+                </div>
               ) : (
                 alerts.map((alert) => (
                   <div key={`${alert.city}-${alert.title}`} className={`rounded-2xl border p-4 shadow-sm transition hover:shadow-md ${severityTone(alert.severity)}`}>
@@ -179,7 +193,14 @@ export default async function HomePage() {
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--sky)] font-semibold mb-4">{t('dashboard.communityHub')}</p>
             <div className="space-y-3">
               {resources.length === 0 ? (
-                <p className="text-sm text-[color:var(--muted)] py-2">{t('dashboard.noResources', { city })}</p>
+                <div className="rounded-2xl border border-dashed border-[color:var(--outline-variant)] bg-[color:var(--surface-soft)]/35 p-4 text-center">
+                  <p className="text-sm text-[color:var(--muted)]">{t('dashboard.noResources', { city })}</p>
+                  <div className="mt-3 flex justify-center">
+                    <Link href="/resources" className="rounded-xl bg-[color:var(--sky)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                      Open resource hub
+                    </Link>
+                  </div>
+                </div>
               ) : (
                 resources.map((resource) => (
                   <div key={`${resource.city}-${resource.name}`} className="rounded-2xl border border-[color:var(--outline-variant)]/60 bg-[color:var(--surface-soft)]/30 p-4 transition hover:bg-[color:var(--surface-soft)]/60">

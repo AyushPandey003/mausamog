@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { assistantSchema, loginSchema, preparednessPlanSchema, preparednessSchema, signupSchema, travelAdvisorySchema, travelSchema } from './validation';
+import {
+  assistantSchema,
+  loginSchema,
+  peerAlertReportSchema,
+  preparednessPlanSchema,
+  preparednessSchema,
+  signupSchema,
+  travelAdvisorySchema,
+  travelSchema,
+} from './validation';
 
 describe('validation schemas', () => {
   it('accepts a valid preparedness input payload', () => {
@@ -25,6 +34,30 @@ describe('validation schemas', () => {
     expect(parsed.household.needs).toHaveLength(2);
   });
 
+  it('coerces preparedness household numbers from form-like strings', () => {
+    const parsed = preparednessSchema.parse({
+      city: 'Bengaluru',
+      pincode: '560034',
+      landmark: 'Koramangala',
+      language: 'English',
+      travelMode: 'Car',
+      travelRoute: 'Koramangala to Whitefield',
+      household: {
+        adults: '2',
+        children: '1',
+        elderly: '0',
+        pets: '0',
+        housingType: 'Apartment',
+        floodProne: true,
+        needs: ['medication'],
+      },
+    });
+
+    expect(parsed.household.adults).toBe(2);
+    expect(parsed.household.children).toBe(1);
+    expect(parsed.household.floodProne).toBe(true);
+  });
+
   it('rejects invalid preparedness input', () => {
     expect(() =>
       preparednessSchema.parse({
@@ -47,11 +80,38 @@ describe('validation schemas', () => {
     ).toThrow();
   });
 
+  it('rejects preparedness payloads with too many special needs', () => {
+    expect(() =>
+      preparednessSchema.parse({
+        city: 'Bengaluru',
+        pincode: '560034',
+        landmark: 'Koramangala',
+        language: 'English',
+        travelMode: 'Car',
+        travelRoute: 'Koramangala to Whitefield',
+        household: {
+          adults: 2,
+          children: 1,
+          elderly: 0,
+          pets: 0,
+          housingType: 'Apartment',
+          floodProne: false,
+          needs: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'],
+        },
+      }),
+    ).toThrow();
+  });
+
   it('accepts valid travel, assistant, signup, and login payloads', () => {
     expect(travelSchema.parse({ city: 'Mumbai', route: 'Andheri to Bandra', mode: 'Train', language: 'Hindi' }).mode).toBe('Train');
     expect(assistantSchema.parse({ sessionId: 'demo-session', language: 'English', prompt: 'What should I pack?', city: 'Chennai' }).city).toBe('Chennai');
     expect(signupSchema.parse({ fullName: 'Ayush Pandey', email: 'ayush@example.com', city: 'Bengaluru' }).email).toBe('ayush@example.com');
     expect(loginSchema.parse({ email: 'citizen@mausamog.gov' }).email).toBe('citizen@mausamog.gov');
+  });
+
+  it('trims login and signup payloads', () => {
+    expect(loginSchema.parse({ email: ' citizen@mausamog.gov ' }).email).toBe('citizen@mausamog.gov');
+    expect(signupSchema.parse({ fullName: ' Ayush Pandey ', email: ' ayush@example.com ', city: ' Bengaluru ' }).city).toBe('Bengaluru');
   });
 
   it('validates generated plan and travel advisory structures', () => {
@@ -78,5 +138,34 @@ describe('validation schemas', () => {
 
     expect(plan.language).toBe('English');
     expect(travel.riskRating).toBe('moderate');
+  });
+
+  it('accepts valid peer alert reports and coerces coordinates', () => {
+    const parsed = peerAlertReportSchema.parse({
+      city: 'Bengaluru',
+      type: 'road_block',
+      severity: 'high',
+      description: 'Road blocked by a fallen tree near the flyover.',
+      latitude: '12.9352',
+      longitude: '77.6205',
+      accuracyMeters: '15',
+    });
+
+    expect(parsed.latitude).toBe(12.9352);
+    expect(parsed.longitude).toBe(77.6205);
+    expect(parsed.accuracyMeters).toBe(15);
+  });
+
+  it('rejects invalid peer alert coordinates and short descriptions', () => {
+    expect(() =>
+      peerAlertReportSchema.parse({
+        city: 'Bengaluru',
+        type: 'road_block',
+        severity: 'high',
+        description: 'short',
+        latitude: '120',
+        longitude: '77.6205',
+      }),
+    ).toThrow();
   });
 });

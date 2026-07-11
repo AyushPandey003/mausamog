@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getResources, getLatestPlan } from '@/lib/repository';
 import { getSessionUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
@@ -42,7 +43,14 @@ export default async function ResourcesPage() {
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {resources.length === 0 ? (
-            <p className="text-sm text-[color:var(--muted)] py-4 text-center col-span-full">{t('resources.empty', { city })}</p>
+            <div className="col-span-full rounded-2xl border border-dashed border-[color:var(--outline-variant)] bg-[color:var(--surface-soft)]/35 p-5 text-center">
+              <p className="text-sm text-[color:var(--muted)]">{t('resources.empty', { city })}</p>
+              <div className="mt-4 flex justify-center gap-2">
+                <Link href="/alerts" className="rounded-xl bg-[color:var(--sky)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                  Open alerts map
+                </Link>
+              </div>
+            </div>
           ) : (
             resources.map((resource) => {
               const isHospital = resource.kind.toLowerCase().includes('hospital');

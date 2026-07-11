@@ -143,6 +143,20 @@ describe('app actions integration', () => {
     expect(result).toEqual({ status: 'success', message: 'Magic link sent. Check your email to finish signup.' });
   });
 
+  it('returns a fallback magic link when signup email sending fails', async () => {
+    mocks.findOrCreateUserMock.mockResolvedValue({ id: 'user-2', email: 'new@example.com', fullName: 'New User' });
+    mocks.createOpaqueTokenMock.mockReturnValue('signup-token');
+    mocks.hashTokenMock.mockReturnValue('signup-hash');
+    mocks.buildMagicLinkMock.mockReturnValue('http://localhost:3000/auth/verify?token=signup-token');
+    mocks.sendMagicLinkEmailMock.mockResolvedValue({ sent: false, reason: 'send_failed' });
+
+    const result = await signupAction(initialState, formDataFrom({ fullName: 'New User', email: 'new@example.com', city: 'Bengaluru' }));
+
+    expect(result.status).toBe('error');
+    expect(result.magicLink).toContain('/auth/verify');
+    expect(result.message).toContain('Could not send');
+  });
+
   it('requires authentication before generating preparedness plans', async () => {
     mocks.getSessionUserMock.mockResolvedValue(null);
 
@@ -200,6 +214,15 @@ describe('app actions integration', () => {
     expect(mocks.revalidatePathMock).toHaveBeenCalledWith('/checklist');
   });
 
+  it('does not toggle checklist items for anonymous users or missing item keys', async () => {
+    mocks.getSessionUserMock.mockResolvedValue(null);
+
+    await toggleChecklistAction(formDataFrom({ city: 'Bengaluru', itemKey: 'ids' }));
+    await toggleChecklistAction(formDataFrom({ city: 'Bengaluru', itemKey: '' }));
+
+    expect(mocks.toggleChecklistItemMock).not.toHaveBeenCalled();
+  });
+
   it('rate limits assistant requests using redis', async () => {
     mocks.getSessionUserMock.mockResolvedValue({ id: 'user-1', email: 'citizen@mausamog.gov', fullName: 'Citizen User' });
     mocks.getRedisMock.mockReturnValue({ incr: vi.fn().mockResolvedValue(7), expire: vi.fn() });
@@ -209,6 +232,14 @@ describe('app actions integration', () => {
     expect(result.status).toBe('error');
     expect(result.message).toContain('Slow down a bit');
     expect(mocks.generateAssistantAnswerMock).not.toHaveBeenCalled();
+  });
+
+  it('requires authentication before assistant requests', async () => {
+    mocks.getSessionUserMock.mockResolvedValue(null);
+
+    const result = await assistantAction(initialState, formDataFrom({ sessionId: 'session-1', language: 'English', prompt: 'What should I pack?', city: 'Bengaluru' }));
+
+    expect(result).toEqual({ status: 'error', message: 'You must be logged in.' });
   });
 
   it('generates assistant responses and persists them when under limit', async () => {
@@ -241,6 +272,15 @@ describe('app actions integration', () => {
 
     expect(mocks.saveTravelAdvisoryMock).toHaveBeenCalled();
     expect(result.message).toContain('fallback');
+  });
+
+  it('requires authentication before generating travel advisories', async () => {
+    mocks.getSessionUserMock.mockResolvedValue(null);
+
+    const result = await generateTravelAdviceAction(initialState, formDataFrom({ city: 'Bengaluru', route: 'Koramangala to Whitefield', mode: 'Car', language: 'English' }));
+
+    expect(result).toEqual({ status: 'error', message: 'You must be logged in.' });
+    expect(mocks.saveTravelAdvisoryMock).not.toHaveBeenCalled();
   });
 
   it('requires authentication before accepting peer alerts', async () => {
@@ -286,6 +326,24 @@ describe('app actions integration', () => {
     expect(result.status).toBe('success');
   });
 
+  it('rate limits peer alerts using redis', async () => {
+    mocks.getSessionUserMock.mockResolvedValue({ id: 'user-1', email: 'citizen@mausamog.gov', fullName: 'Citizen User' });
+    mocks.getRedisMock.mockReturnValue({ incr: vi.fn().mockResolvedValue(4), expire: vi.fn() });
+
+    const result = await reportPeerAlertAction(initialState, formDataFrom({
+      city: 'Bengaluru',
+      type: 'road_block',
+      severity: 'moderate',
+      description: 'Road blocked by a stalled vehicle near the underpass.',
+      latitude: '12.9352',
+      longitude: '77.6205',
+    }));
+
+    expect(result.status).toBe('error');
+    expect(result.message).toContain('Please wait before reporting another field alert');
+    expect(mocks.savePeerAlertReportMock).not.toHaveBeenCalled();
+  });
+
   it('returns empty home data for anonymous users', async () => {
     mocks.getSessionUserMock.mockResolvedValue(null);
 
@@ -320,6 +378,27 @@ describe('app actions integration', () => {
     const result = await getPeerAlertData('Bengaluru');
 
     expect(result.peerReports).toEqual([{ id: 'peer-1', city: 'Bengaluru' }]);
+  });
+
+  it('returns demo assistant data for anonymous users', async () => {
+    mocks.getSessionUserMock.mockResolvedValue(null);
+
+    const result = await getAssistantData();
+
+    expect(result).toEqual({ sessionId: 'demo-session', messages: [] });
+    expect(mocks.getAssistantMessagesMock).not.toHaveBeenCalled();
+  });
+
+  it('logs out cleanly even when no session cookie exists', async () => {
+    const deleteFn = vi.fn();
+    mocks.cookiesMock.mockResolvedValue({ get: vi.fn().mockReturnValue(undefined), delete: deleteFn });
+
+    await logoutAction();
+
+    expect(mocks.deleteSessionByTokenHashMock).not.toHaveBeenCalled();
+    expect(deleteFn).toHaveBeenCalledWith('session_token');
+    expect(deleteFn).toHaveBeenCalledWith('session');
+    expect(mocks.redirectMock).toHaveBeenCalledWith('/login');
   });
 
   it('deletes the session cookie and redirects on logout', async () => {

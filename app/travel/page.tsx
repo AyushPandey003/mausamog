@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getTravelData } from '@/app/actions';
 import { getLatestPlan } from '@/lib/repository';
 import { TravelForm } from '@/app/components/travel-form';
@@ -74,7 +75,14 @@ export default async function TravelPage() {
               </div>
             </>
           ) : (
-            <p className="text-sm text-[color:var(--muted)]">{t('travel.empty')}</p>
+            <div className="rounded-2xl border border-dashed border-[color:var(--outline-variant)] bg-[color:var(--surface-soft)]/35 p-5">
+              <p className="text-sm text-[color:var(--muted)]">{t('travel.empty')}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link href="/alerts" className="rounded-xl bg-[color:var(--navy)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                  View live alerts
+                </Link>
+              </div>
+            </div>
           )}
         </div>
         <p className="text-[10px] text-[color:var(--outline)] mt-8">
