@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildWeatherContext, deterministicPreparednessPlan, deterministicTravelAdvisory } from './monsoon';
+import { buildWeatherContext, deterministicPreparednessPlan, deterministicTravelAdvisory, parseJsonCandidate } from './monsoon';
 import type { PreparednessInput } from './schema';
 
 const input: PreparednessInput = {
@@ -37,5 +37,10 @@ describe('monsoon helpers', () => {
     const advisory = deterministicTravelAdvisory('Mumbai', 'coastal road', 'Car');
     expect(advisory.riskRating).toBe('high');
     expect(advisory.carryItems.length).toBeGreaterThan(2);
+  });
+
+  it('parses plain and fenced JSON candidates', () => {
+    expect(parseJsonCandidate('{"ok":true}')).toEqual({ ok: true });
+    expect(parseJsonCandidate('```json\n{"ok":true}\n```')).toEqual({ ok: true });
   });
 });

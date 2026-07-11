@@ -101,6 +101,11 @@ export function deterministicTravelAdvisory(city: string, route: string, mode: s
 }
 
 export function parseJsonCandidate(text: string) {
-  const trimmed = text.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+  const trimmed = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
   return JSON.parse(trimmed) as unknown;
 }

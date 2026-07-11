@@ -39,7 +39,7 @@ export default async function TravelPage() {
                   <h3 className="font-bold text-sm text-[color:var(--foreground)]">Carry items</h3>
                   <ul className="mt-2 space-y-1 text-xs text-[color:var(--muted)]">
                     {advisory.result.carryItems.map((item) => (
-                      <li key={item}>• {item}</li>
+                      <li key={item}>- {item}</li>
                     ))}
                   </ul>
                 </div>
@@ -48,7 +48,7 @@ export default async function TravelPage() {
                 <h3 className="font-bold text-sm text-red-900">Avoid if</h3>
                 <ul className="mt-2 space-y-1 text-xs text-red-800">
                   {advisory.result.avoidIf.map((item) => (
-                    <li key={item}>• {item}</li>
+                    <li key={item}>- {item}</li>
                   ))}
                 </ul>
               </div>

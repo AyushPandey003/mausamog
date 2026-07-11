@@ -38,7 +38,7 @@ export default async function AlertsPage() {
                 <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-[color:var(--accent)] font-bold">{alert.severity}</p>
                 <h3 className="mt-1 text-base font-bold text-[color:var(--foreground)]">{alert.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{alert.summary}</p>
-                <p className="mt-3 text-[10px] font-mono uppercase tracking-[0.1em] text-[color:var(--muted)]">{alert.meta.zone ?? city} · {alert.meta.window ?? 'Active'}</p>
+                <p className="mt-3 text-[10px] font-mono uppercase tracking-[0.1em] text-[color:var(--muted)]">{alert.meta.zone ?? city} | {alert.meta.window ?? 'Active'}</p>
               </div>
             ))
           )}

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useActionState } from 'react';
 import { loginAction, type PlanActionState } from '@/app/actions';
+import { ActionStatusMessage } from '@/app/components/action-status-message';
 
 const initialState: PlanActionState = { status: 'idle', message: '' };
 
@@ -39,16 +40,7 @@ export default function LoginPage() {
               <input className="input w-full" id="email" name="email" placeholder="citizen@mausamog.gov" required type="email" />
             </div>
 
-            {state.message && (
-              <div className={`rounded-xl border p-3 text-sm ${state.status === 'error' ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
-                <p>{state.message}</p>
-                {state.magicLink && (
-                  <a className="mt-2 block break-all font-semibold underline" href={state.magicLink}>
-                    {state.magicLink}
-                  </a>
-                )}
-              </div>
-            )}
+            <ActionStatusMessage state={state} idleTone="success" />
 
             <button
               className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[color:var(--accent)] font-semibold text-white shadow-sm transition-colors hover:bg-[color:var(--accent-strong)]"

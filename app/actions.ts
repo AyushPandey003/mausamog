@@ -7,7 +7,22 @@ import { generateAssistantAnswer, generatePreparednessPlan, generateTravelAdvice
 import { sendMagicLinkEmail } from '@/lib/email';
 import { buildWeatherContext } from '@/lib/monsoon';
 import { getRedis } from '@/lib/redis';
-import { createMagicLink, deleteSessionByTokenHash, findOrCreateUser, getUserByEmail, getAlerts, getAssistantMessages, getChecklist, getLatestPlan, getLatestTravelAdvisory, getResources, saveAssistantMessage, savePreparednessPlan, saveTravelAdvisory, toggleChecklistItem } from '@/lib/repository';
+import {
+  createMagicLink,
+  deleteSessionByTokenHash,
+  findOrCreateUser,
+  getAlerts,
+  getAssistantMessages,
+  getChecklist,
+  getLatestPlan,
+  getLatestTravelAdvisory,
+  getResources,
+  getUserByEmail,
+  saveAssistantMessage,
+  savePreparednessPlan,
+  saveTravelAdvisory,
+  toggleChecklistItem,
+} from '@/lib/repository';
 import { assistantSchema, preparednessSchema, travelSchema, loginSchema, signupSchema } from '@/lib/validation';
 import { buildMagicLink, createOpaqueToken, hashToken, getSessionUser, SESSION_COOKIE_NAME } from '@/lib/auth';
 
@@ -16,6 +31,29 @@ export type PlanActionState = {
   message: string;
   magicLink?: string;
 };
+
+type MagicLinkIntent = 'login' | 'signup';
+
+function errorState(error: unknown, fallbackMessage: string): PlanActionState {
+  return { status: 'error', message: error instanceof Error ? error.message : fallbackMessage };
+}
+
+function emailFallbackState(intent: MagicLinkIntent, reason: string | undefined, magicLink: string): PlanActionState {
+  const intentLabel = intent === 'signup' ? 'signup' : 'magic link';
+  const sendFailed = reason === 'send_failed';
+
+  return {
+    status: sendFailed ? 'error' : 'success',
+    message: sendFailed
+      ? `Could not send the ${intentLabel} email. Use the demo link below.`
+      : 'Email is not fully configured yet. Use the demo magic link below.',
+    magicLink,
+  };
+}
+
+function revalidatePaths(paths: string[]) {
+  paths.forEach((path) => revalidatePath(path));
+}
 
 export async function loginAction(_: PlanActionState, formData: FormData): Promise<PlanActionState> {
   try {
@@ -42,13 +80,9 @@ export async function loginAction(_: PlanActionState, formData: FormData): Promi
       return { status: 'success', message: 'Magic link sent. Check your email to sign in.' };
     }
 
-    return {
-      status: email.reason === 'send_failed' ? 'error' : 'success',
-      message: email.reason === 'send_failed' ? 'Could not send the magic link email. Use the demo link below.' : 'Email is not fully configured yet. Use the demo magic link below.',
-      magicLink,
-    };
+    return emailFallbackState('login', email.reason, magicLink);
   } catch (error) {
-    return { status: 'error', message: error instanceof Error ? error.message : 'Login failed.' };
+    return errorState(error, 'Login failed.');
   }
 }
 
@@ -75,13 +109,9 @@ export async function signupAction(_: PlanActionState, formData: FormData): Prom
       return { status: 'success', message: 'Magic link sent. Check your email to finish signup.' };
     }
 
-    return {
-      status: email.reason === 'send_failed' ? 'error' : 'success',
-      message: email.reason === 'send_failed' ? 'Could not send the signup email. Use the demo link below.' : 'Email is not fully configured yet. Use the demo magic link below.',
-      magicLink,
-    };
+    return emailFallbackState('signup', email.reason, magicLink);
   } catch (error) {
-    return { status: 'error', message: error instanceof Error ? error.message : 'Registration failed.' };
+    return errorState(error, 'Registration failed.');
   }
 }
 
@@ -95,12 +125,29 @@ export async function logoutAction() {
 }
 
 async function getRequestOrigin() {
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  const isProduction = process.env.NODE_ENV === 'production';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+  if (appUrl && !(isProduction && appUrl.includes('localhost'))) {
+    return appUrl;
+  }
+
+  const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (productionHost) {
+    return productionHost.startsWith('http') ? productionHost : `https://${productionHost}`;
+  }
+
+  const deploymentHost = process.env.VERCEL_URL?.trim();
+  if (deploymentHost) {
+    return deploymentHost.startsWith('http') ? deploymentHost : `https://${deploymentHost}`;
+  }
+
   const headerStore = await headers();
   const origin = headerStore.get('origin');
-  if (origin) return origin;
-  const host = headerStore.get('host') ?? 'localhost:3000';
-  const protocol = headerStore.get('x-forwarded-proto') ?? 'http';
+  if (origin && !(isProduction && origin.includes('localhost'))) return origin;
+
+  const host = headerStore.get('x-forwarded-host') ?? headerStore.get('host') ?? 'localhost:3000';
+  const protocol = headerStore.get('x-forwarded-proto') ?? (host.includes('localhost') ? 'http' : 'https');
   return `${protocol}://${host}`;
 }
 
@@ -130,12 +177,10 @@ export async function generatePreparednessPlanAction(_: PlanActionState, formDat
     const weather = buildWeatherContext(input.city);
     const generated = await generatePreparednessPlan(input, weather);
     await savePreparednessPlan(user.id, input, weather, generated.plan, generated.source);
-    revalidatePath('/');
-    revalidatePath('/alerts');
-    revalidatePath('/travel');
+    revalidatePaths(['/', '/alerts', '/travel']);
     return { status: 'success', message: `Preparedness plan generated using ${generated.source}.` };
   } catch (error) {
-    return { status: 'error', message: error instanceof Error ? error.message : 'Could not generate the preparedness plan.' };
+    return errorState(error, 'Could not generate the preparedness plan.');
   }
 }
 
@@ -146,8 +191,7 @@ export async function toggleChecklistAction(formData: FormData) {
   const itemKey = String(formData.get('itemKey') ?? '');
   if (!itemKey) return;
   await toggleChecklistItem(city, itemKey, user.id);
-  revalidatePath('/');
-  revalidatePath('/checklist');
+  revalidatePaths(['/', '/checklist']);
 }
 
 export async function generateTravelAdviceAction(_: PlanActionState, formData: FormData): Promise<PlanActionState> {
@@ -166,7 +210,7 @@ export async function generateTravelAdviceAction(_: PlanActionState, formData: F
     revalidatePath('/travel');
     return { status: 'success', message: `Travel advisory refreshed using ${generated.source}.` };
   } catch (error) {
-    return { status: 'error', message: error instanceof Error ? error.message : 'Could not generate travel advice.' };
+    return errorState(error, 'Could not generate travel advice.');
   }
 }
 
@@ -197,7 +241,7 @@ export async function assistantAction(_: PlanActionState, formData: FormData): P
     revalidatePath('/assistant');
     return { status: 'success', message: `Assistant answered using ${answer.source}.` };
   } catch (error) {
-    return { status: 'error', message: error instanceof Error ? error.message : 'Assistant request failed.' };
+    return errorState(error, 'Assistant request failed.');
   }
 }
 

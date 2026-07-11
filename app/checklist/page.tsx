@@ -29,10 +29,10 @@ export default async function ChecklistPage() {
               <form key={item.itemKey} action={toggleChecklistAction} className="flex items-start gap-3 rounded-2xl border border-[color:var(--outline-variant)]/60 bg-[color:var(--surface-soft)]/40 p-4 transition hover:bg-[color:var(--surface-soft)]">
                 <input type="hidden" name="city" value={item.city} />
                 <input type="hidden" name="itemKey" value={item.itemKey} />
-                <button className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border text-xs transition-colors ${item.done ? 'border-[color:var(--accent)] bg-[color:var(--accent)] text-white' : 'border-[color:var(--outline)] bg-white text-transparent hover:border-[color:var(--accent)]'}`}>✓</button>
+                <button className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border text-xs transition-colors ${item.done ? 'border-[color:var(--accent)] bg-[color:var(--accent)] text-white' : 'border-[color:var(--outline)] bg-white text-transparent hover:border-[color:var(--accent)]'}`}>&#10003;</button>
                 <div>
                   <p className={`text-sm font-medium ${item.done ? 'line-through text-[color:var(--outline)]' : 'text-[color:var(--foreground)]'}`}>{item.label}</p>
-                  <p className="mt-1 text-[10px] font-mono uppercase tracking-[0.1em] text-[color:var(--muted)]">{item.category} · {item.priority}</p>
+                  <p className="mt-1 text-[10px] font-mono uppercase tracking-[0.1em] text-[color:var(--muted)]">{item.category} | {item.priority}</p>
                 </div>
               </form>
             ))

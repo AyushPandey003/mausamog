@@ -8,6 +8,28 @@ import { appUsers, assistantMessages, authMagicLinks, authSessions, checklistPro
 
 let schemaReady: Promise<void> | null = null;
 
+function normalizeCity(city: string) {
+  return city.trim().toLowerCase();
+}
+
+function seedRowsForCity<T extends { city: string }>(rows: T[], city: string) {
+  const normalizedCity = normalizeCity(city);
+  return rows.filter((item) => normalizeCity(item.city) === normalizedCity);
+}
+
+async function findChecklistProgress(city: string, itemKey: string, userId: string) {
+  const db = getDb();
+  if (!db) return null;
+
+  const [row] = await db
+    .select()
+    .from(checklistProgress)
+    .where(and(eq(checklistProgress.city, city), eq(checklistProgress.itemKey, itemKey), eq(checklistProgress.userId, userId)))
+    .limit(1);
+
+  return row ?? null;
+}
+
 export async function ensureSchema() {
   if (schemaReady) return schemaReady;
   schemaReady = (async () => {
@@ -141,7 +163,7 @@ export async function savePreparednessPlan(userId: string, input: PreparednessIn
   const db = getDb();
   if (!db) return;
   await ensureSchema();
-  
+
   let [profile] = await db.select().from(citizenProfiles).where(eq(citizenProfiles.userId, userId)).limit(1);
   if (profile) {
     await db.update(citizenProfiles).set({ city: input.city, pincode: input.pincode, landmark: input.landmark, language: input.language, household: input.household }).where(eq(citizenProfiles.id, profile.id));
@@ -162,30 +184,33 @@ export async function savePreparednessPlan(userId: string, input: PreparednessIn
 
 export async function getAlerts(city: string) {
   const redis = getRedis();
-  const cacheKey = `alerts:${city.toLowerCase()}`;
+  const cacheKey = `alerts:${normalizeCity(city)}`;
   if (redis) {
     const cached = await redis.get<typeof alertsSeed>(cacheKey);
     if (cached) return cached;
   }
 
   const db = getDb();
-  if (!db) return alertsSeed.filter((item) => item.city.toLowerCase() === city.toLowerCase()).slice(0, 3);
+  const seededAlerts = seedRowsForCity(alertsSeed, city).slice(0, 3);
+  if (!db) return seededAlerts;
+
   await ensureSchema();
   const rows = await db.select().from(weatherAlerts).where(eq(weatherAlerts.city, city)).orderBy(desc(weatherAlerts.createdAt)).limit(5);
-  const result = rows.length ? rows : alertsSeed.filter((item) => item.city.toLowerCase() === city.toLowerCase()).slice(0, 3);
+  const result = rows.length ? rows : seededAlerts;
   if (redis) await redis.set(cacheKey, result, { ex: 60 * 10 });
   return result;
 }
 
 export async function getChecklist(city: string, userId: string) {
   const db = getDb();
-  if (!db) return checklistSeed.filter((item) => item.city.toLowerCase() === city.toLowerCase());
+  const citySeed = seedRowsForCity(checklistSeed, city);
+  if (!db) return citySeed;
+
   await ensureSchema();
-  
+
   const rows = await db.select().from(checklistProgress).where(and(eq(checklistProgress.city, city), eq(checklistProgress.userId, userId)));
   if (rows.length) return rows;
 
-  const citySeed = checklistSeed.filter((item) => item.city.toLowerCase() === city.toLowerCase());
   if (citySeed.length) {
     const values = citySeed.map((item) => ({
       userId,
@@ -205,24 +230,25 @@ export async function toggleChecklistItem(city: string, itemKey: string, userId:
   const db = getDb();
   if (!db) return;
   await ensureSchema();
-  const [row] = await db.select().from(checklistProgress).where(and(eq(checklistProgress.city, city), eq(checklistProgress.itemKey, itemKey), eq(checklistProgress.userId, userId))).limit(1);
+
+  let row = await findChecklistProgress(city, itemKey, userId);
   if (!row) {
     await getChecklist(city, userId);
-    const [row2] = await db.select().from(checklistProgress).where(and(eq(checklistProgress.city, city), eq(checklistProgress.itemKey, itemKey), eq(checklistProgress.userId, userId))).limit(1);
-    if (row2) {
-      await db.update(checklistProgress).set({ done: !row2.done }).where(eq(checklistProgress.id, row2.id));
-    }
-    return;
+    row = await findChecklistProgress(city, itemKey, userId);
   }
+
+  if (!row) return;
   await db.update(checklistProgress).set({ done: !row.done }).where(eq(checklistProgress.id, row.id));
 }
 
 export async function getResources(city: string) {
   const db = getDb();
-  if (!db) return resourcesSeed.filter((item) => item.city.toLowerCase() === city.toLowerCase());
+  const seededResources = seedRowsForCity(resourcesSeed, city);
+  if (!db) return seededResources;
+
   await ensureSchema();
   const rows = await db.select().from(localResources).where(eq(localResources.city, city));
-  return rows.length ? rows : resourcesSeed.filter((item) => item.city.toLowerCase() === city.toLowerCase());
+  return rows.length ? rows : seededResources;
 }
 
 export async function saveTravelAdvisory(city: string, route: string, mode: string, result: TravelAdvisory, source: string) {

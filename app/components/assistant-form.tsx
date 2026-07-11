@@ -2,6 +2,8 @@
 
 import { useActionState } from 'react';
 import { assistantAction, type PlanActionState } from '@/app/actions';
+import { ActionStatusMessage } from '@/app/components/action-status-message';
+import { DEFAULT_PROFILE, LANGUAGE_OPTIONS } from '@/lib/form-options';
 
 const initialState: PlanActionState = { status: 'idle', message: 'Ask for multilingual monsoon safety guidance.' };
 
@@ -11,7 +13,7 @@ interface AssistantFormProps {
   defaultLanguage?: string;
 }
 
-export function AssistantForm({ sessionId, defaultCity = 'Bengaluru', defaultLanguage = 'English' }: AssistantFormProps) {
+export function AssistantForm({ sessionId, defaultCity = DEFAULT_PROFILE.city, defaultLanguage = DEFAULT_PROFILE.language }: AssistantFormProps) {
   const [state, formAction, pending] = useActionState(assistantAction, initialState);
 
   return (
@@ -27,10 +29,9 @@ export function AssistantForm({ sessionId, defaultCity = 'Bengaluru', defaultLan
       <div className="flex flex-col gap-1">
         <label className="text-xs font-mono uppercase text-[color:var(--muted)] pl-1">Language</label>
         <select name="language" defaultValue={defaultLanguage} className="input">
-          <option>English</option>
-          <option>Hindi</option>
-          <option>Kannada</option>
-          <option>Tamil</option>
+          {LANGUAGE_OPTIONS.map((language) => (
+            <option key={language}>{language}</option>
+          ))}
         </select>
       </div>
 
@@ -39,7 +40,7 @@ export function AssistantForm({ sessionId, defaultCity = 'Bengaluru', defaultLan
         <textarea name="prompt" rows={5} className="input min-h-24" placeholder="Ask anything about evacuation, flooding, travel, medicines, or family safety." required />
       </div>
 
-      <p aria-live="polite" className={`rounded-2xl border p-3 text-sm ${state.status === 'error' ? 'border-red-200 bg-red-50 text-red-800' : 'border-[color:var(--outline-variant)] bg-[color:var(--surface-soft)] text-[color:var(--muted)]'}`}>{state.message}</p>
+      <ActionStatusMessage state={state} />
       
       <button disabled={pending} className="rounded-2xl bg-[color:var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60">
         {pending ? 'Thinking...' : 'Ask assistant'}

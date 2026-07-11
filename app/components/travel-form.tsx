@@ -2,6 +2,8 @@
 
 import { useActionState } from 'react';
 import { generateTravelAdviceAction, type PlanActionState } from '@/app/actions';
+import { ActionStatusMessage } from '@/app/components/action-status-message';
+import { DEFAULT_PROFILE, LANGUAGE_OPTIONS, TRANSPORT_MODE_OPTIONS } from '@/lib/form-options';
 
 const initialState: PlanActionState = { status: 'idle', message: 'Generate weather-aware route guidance for monsoon travel.' };
 
@@ -13,10 +15,10 @@ interface TravelFormProps {
 }
 
 export function TravelForm({
-  defaultCity = 'Bengaluru',
-  defaultRoute = 'Koramangala to Whitefield',
-  defaultMode = 'Car',
-  defaultLanguage = 'English'
+  defaultCity = DEFAULT_PROFILE.city,
+  defaultRoute = DEFAULT_PROFILE.travelRoute,
+  defaultMode = DEFAULT_PROFILE.travelMode,
+  defaultLanguage = DEFAULT_PROFILE.language,
 }: TravelFormProps) {
   const [state, formAction, pending] = useActionState(generateTravelAdviceAction, initialState);
 
@@ -37,25 +39,22 @@ export function TravelForm({
       <div className="flex flex-col gap-1">
         <label className="text-xs font-mono uppercase text-[color:var(--muted)] pl-1">Transport Mode</label>
         <select name="mode" defaultValue={defaultMode} className="input">
-          <option>Walking</option>
-          <option>Bike</option>
-          <option>Car</option>
-          <option>Bus</option>
-          <option>Train</option>
+          {TRANSPORT_MODE_OPTIONS.map((mode) => (
+            <option key={mode}>{mode}</option>
+          ))}
         </select>
       </div>
 
       <div className="flex flex-col gap-1">
         <label className="text-xs font-mono uppercase text-[color:var(--muted)] pl-1">Preferred Language</label>
         <select name="language" defaultValue={defaultLanguage} className="input">
-          <option>English</option>
-          <option>Hindi</option>
-          <option>Kannada</option>
-          <option>Tamil</option>
+          {LANGUAGE_OPTIONS.map((language) => (
+            <option key={language}>{language}</option>
+          ))}
         </select>
       </div>
 
-      <p aria-live="polite" className={`rounded-2xl border p-3 text-sm ${state.status === 'error' ? 'border-red-200 bg-red-50 text-red-800' : 'border-[color:var(--outline-variant)] bg-[color:var(--surface-soft)] text-[color:var(--muted)]'}`}>{state.message}</p>
+      <ActionStatusMessage state={state} />
       
       <button disabled={pending} className="rounded-2xl bg-[color:var(--foreground)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60">
         {pending ? 'Generating...' : 'Generate travel advisory'}

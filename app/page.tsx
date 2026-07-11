@@ -21,7 +21,7 @@ export default async function HomePage() {
         <div className="card bg-[linear-gradient(135deg,#131b2e,#1c2940)] text-white relative overflow-hidden flex flex-col justify-between p-6 shadow-lg min-h-[300px]">
           {/* Abstract weather icon background */}
           <div className="absolute -top-10 -right-10 opacity-10 pointer-events-none">
-            <span className="text-9xl">⛈️</span>
+            <span className="text-7xl font-black tracking-widest">RAIN</span>
           </div>
 
           <div className="relative z-10">
@@ -76,12 +76,12 @@ export default async function HomePage() {
               <div className="mt-5 grid gap-6 md:grid-cols-2">
                 <div className="bg-[color:var(--surface-soft)]/50 rounded-2xl p-4 border border-[color:var(--outline-variant)]/30">
                   <h4 className="font-bold text-sm text-[color:var(--foreground)] flex items-center gap-1.5 mb-3">
-                    <span>📋</span> Before Monsoon
+                    <span className="font-mono text-xs uppercase text-[color:var(--accent)]">Plan</span> Before Monsoon
                   </h4>
                   <ul className="space-y-2 text-sm text-[color:var(--muted)]">
                     {plan.plan.beforeMonsoon.map((item) => (
                       <li key={item} className="flex gap-2">
-                        <span className="text-[color:var(--accent)]">•</span>
+                        <span className="text-[color:var(--accent)]">-</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -89,12 +89,12 @@ export default async function HomePage() {
                 </div>
                 <div className="bg-[color:var(--surface-soft)]/50 rounded-2xl p-4 border border-[color:var(--outline-variant)]/30">
                   <h4 className="font-bold text-sm text-[color:var(--foreground)] flex items-center gap-1.5 mb-3">
-                    <span>🧰</span> Emergency Kit
+                    <span className="font-mono text-xs uppercase text-[color:var(--accent)]">Kit</span> Emergency Kit
                   </h4>
                   <ul className="space-y-2 text-sm text-[color:var(--muted)]">
                     {plan.plan.emergencyKit.map((item) => (
                       <li key={item} className="flex gap-2">
-                        <span className="text-[color:var(--accent)]">•</span>
+                        <span className="text-[color:var(--accent)]">-</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -123,10 +123,10 @@ export default async function HomePage() {
                   <form key={item.itemKey} action={toggleChecklistAction} className="flex items-start gap-3 rounded-2xl border border-[color:var(--outline-variant)]/60 bg-[color:var(--surface-soft)]/40 p-4 transition hover:bg-[color:var(--surface-soft)]">
                     <input type="hidden" name="city" value={item.city} />
                     <input type="hidden" name="itemKey" value={item.itemKey} />
-                    <button className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border text-xs transition-colors ${item.done ? 'border-[color:var(--accent)] bg-[color:var(--accent)] text-white' : 'border-[color:var(--outline)] bg-white text-transparent hover:border-[color:var(--accent)]'}`}>✓</button>
+                    <button className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border text-xs transition-colors ${item.done ? 'border-[color:var(--accent)] bg-[color:var(--accent)] text-white' : 'border-[color:var(--outline)] bg-white text-transparent hover:border-[color:var(--accent)]'}`}>&#10003;</button>
                     <div className="flex-1">
                       <p className={`text-sm font-medium ${item.done ? 'text-[color:var(--outline)] line-through' : 'text-[color:var(--foreground)]'}`}>{item.label}</p>
-                      <p className="mt-1 text-[10px] font-mono uppercase tracking-[0.1em] text-[color:var(--muted)]">{item.category} · {item.priority}</p>
+                      <p className="mt-1 text-[10px] font-mono uppercase tracking-[0.1em] text-[color:var(--muted)]">{item.category} | {item.priority}</p>
                     </div>
                   </form>
                 ))
@@ -164,7 +164,7 @@ export default async function HomePage() {
                 resources.map((resource) => (
                   <div key={`${resource.city}-${resource.name}`} className="rounded-2xl border border-[color:var(--outline-variant)]/60 bg-[color:var(--surface-soft)]/30 p-4 transition hover:bg-[color:var(--surface-soft)]/60">
                     <h4 className="font-bold text-sm text-[color:var(--foreground)]">{resource.name}</h4>
-                    <p className="mt-1 text-xs text-[color:var(--muted)]">{resource.kind} · {resource.openStatus}</p>
+                    <p className="mt-1 text-xs text-[color:var(--muted)]">{resource.kind} | {resource.openStatus}</p>
                     <p className="mt-2 text-xs text-[color:var(--muted)] leading-relaxed">{resource.address}</p>
                     <div className="mt-3 flex items-center justify-between">
                       <span className="text-xs font-mono font-semibold text-[color:var(--foreground)]">{resource.phone}</span>

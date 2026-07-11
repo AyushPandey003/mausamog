@@ -29,7 +29,7 @@ export default async function AssistantPage() {
             messages.map((message) => (
               <div key={message.id} className="rounded-2xl border border-[color:var(--outline-variant)]/60 bg-[color:var(--surface-soft)]/45 p-4 transition hover:bg-[color:var(--surface-soft)]">
                 <div className="flex justify-between items-center">
-                  <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-[color:var(--accent)] font-bold">{message.language} · {message.source}</p>
+                  <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-[color:var(--accent)] font-bold">{message.language} | {message.source}</p>
                   <span className="text-[9px] font-mono text-[color:var(--outline)]">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <p className="mt-2 text-sm font-bold text-[color:var(--foreground)]">Q: {message.prompt}</p>
