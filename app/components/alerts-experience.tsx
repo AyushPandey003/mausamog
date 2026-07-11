@@ -15,6 +15,7 @@ type AlertItem = {
   summary: string;
   source: string;
   meta: Record<string, string>;
+  coordinates?: [number, number];
 };
 
 type ResourceItem = {
@@ -25,6 +26,7 @@ type ResourceItem = {
   phone: string;
   openStatus: string;
   meta: Record<string, string | undefined>;
+  coordinates?: [number, number];
 };
 
 const peerAlertTypes = [
@@ -38,11 +40,13 @@ const peerAlertTypes = [
 
 export function AlertsExperience({
   city,
+  cityCoordinates,
   alerts,
   resources,
   peerReports,
 }: {
   city: string;
+  cityCoordinates: [number, number];
   alerts: AlertItem[];
   resources: ResourceItem[];
   peerReports: PeerAlertReport[];
@@ -59,8 +63,25 @@ export function AlertsExperience({
   const [showPeerReports, setShowPeerReports] = useState(true);
   const [selectedPeerReportIndex, setSelectedPeerReportIndex] = useState(0);
   const [reportState, reportAction, reportPending] = useActionState(reportPeerAlertAction, { status: 'idle', message: '' });
-  const [location, setLocation] = useState<{ latitude: number; longitude: number; accuracyMeters?: number } | null>(null);
+  
+  const [prevCity, setPrevCity] = useState(city);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number; accuracyMeters?: number } | null>(() => {
+    return {
+      latitude: cityCoordinates[1],
+      longitude: cityCoordinates[0],
+    };
+  });
   const [locationMessage, setLocationMessage] = useState('');
+
+  // Synchronize state with props during render to avoid useEffect set-state error
+  if (city !== prevCity) {
+    setPrevCity(city);
+    setLocation({
+      latitude: cityCoordinates[1],
+      longitude: cityCoordinates[0],
+    });
+    setLocationMessage('');
+  }
 
   const selectedAlert = alerts[selectedAlertIndex] ?? null;
   const selectedResource = resources[selectedResourceIndex] ?? null;
@@ -128,6 +149,7 @@ export function AlertsExperience({
         <div className="mt-6 h-full min-h-[420px] overflow-hidden rounded-2xl border border-[color:var(--outline-variant)]">
           <AlertsMap
             city={city}
+            cityCoordinates={cityCoordinates}
             alerts={alerts}
             resources={resources}
             peerReports={peerReports}
@@ -138,6 +160,9 @@ export function AlertsExperience({
             showResources={showResources}
             showRiskZones={showRiskZones}
             showPeerReports={showPeerReports}
+            location={location}
+            onLocationSelect={setLocation}
+            setLocationMessage={setLocationMessage}
           />
         </div>
       </section>
@@ -166,7 +191,11 @@ export function AlertsExperience({
             <button type="button" onClick={requestReportLocation} className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100">
               {t('alertsPage.useMyLocation')}
             </button>
-            {locationMessage ? <p className="text-xs leading-5 text-[color:var(--muted)]">{locationMessage}</p> : null}
+            {locationMessage ? (
+              <p className="text-xs leading-5 text-[color:var(--muted)]">{locationMessage}</p>
+            ) : (
+              <p className="text-xs leading-5 text-[color:var(--muted)]">{t('alertsPage.mapTip')}</p>
+            )}
             <ActionStatusMessage state={reportState} />
             <button disabled={reportPending || !location} className="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60">
               {reportPending ? t('alertsPage.reporting') : t('alertsPage.sendPeerAlert')}

@@ -16,6 +16,7 @@ type I18nProviderProps = {
 };
 
 export function I18nProvider({ initialLanguage, children }: I18nProviderProps) {
+  const [prevInitialLanguage, setPrevInitialLanguage] = useState(initialLanguage);
   const [language, setLanguage] = useState<SupportedLanguage>(() => {
     if (typeof window === 'undefined') return initialLanguage;
     const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY) ?? undefined;
@@ -25,9 +26,10 @@ export function I18nProvider({ initialLanguage, children }: I18nProviderProps) {
     return initialLanguage;
   });
 
-  useEffect(() => {
+  if (initialLanguage !== prevInitialLanguage) {
+    setPrevInitialLanguage(initialLanguage);
     setLanguage(initialLanguage);
-  }, [initialLanguage]);
+  }
 
   const i18n = getClientI18n(language);
 

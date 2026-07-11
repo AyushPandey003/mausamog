@@ -11,6 +11,7 @@ type AlertItem = {
   summary: string;
   source: string;
   meta: Record<string, string>;
+  coordinates?: [number, number];
 };
 
 type ResourceItem = {
@@ -21,9 +22,10 @@ type ResourceItem = {
   phone: string;
   openStatus: string;
   meta: Record<string, string | undefined>;
+  coordinates?: [number, number];
 };
 
-const cityCenters: Record<string, [number, number]> = {
+export const cityCenters: Record<string, [number, number]> = {
   bengaluru: [77.5946, 12.9716],
   mumbai: [72.8777, 19.076],
   chennai: [80.2707, 13.0827],
@@ -95,6 +97,10 @@ export function AlertsMap({
   showResources,
   showRiskZones,
   showPeerReports,
+  location,
+  onLocationSelect,
+  setLocationMessage,
+  cityCoordinates,
 }: {
   city: string;
   alerts: AlertItem[];
@@ -107,14 +113,19 @@ export function AlertsMap({
   showResources: boolean;
   showRiskZones: boolean;
   showPeerReports: boolean;
+  location: { latitude: number; longitude: number; accuracyMeters?: number } | null;
+  onLocationSelect?: (loc: { latitude: number; longitude: number; accuracyMeters?: number } | null) => void;
+  setLocationMessage?: (msg: string) => void;
+  cityCoordinates?: [number, number];
 }) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const instanceRef = useRef<mapboxgl.Map | null>(null);
   const alertMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const resourceMarkersRef = useRef<mapboxgl.Marker[]>([]);
   const peerMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const reportMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
-  const center = useMemo(() => cityCenters[keyForCity(city)] ?? cityCenters.bengaluru, [city]);
+  const center = useMemo(() => cityCoordinates ?? cityCenters[keyForCity(city)] ?? cityCenters.bengaluru, [city, cityCoordinates]);
 
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -132,6 +143,19 @@ export function AlertsMap({
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
     instanceRef.current = map;
+
+    // Handle map clicking to select report location
+    map.on('click', (e) => {
+      // Exclude clicks on markers/popups by checking if the original click target is the canvas
+      if (e.originalEvent.target && (e.originalEvent.target as HTMLElement).tagName === 'CANVAS') {
+        const { lng, lat } = e.lngLat;
+        onLocationSelect?.({
+          latitude: lat,
+          longitude: lng,
+        });
+        setLocationMessage?.(`Selected location on map: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+      }
+    });
 
     map.on('load', () => {
       map.addSource('risk-zone', {
@@ -185,13 +209,17 @@ export function AlertsMap({
       alertMarkersRef.current.forEach((marker) => marker.remove());
       resourceMarkersRef.current.forEach((marker) => marker.remove());
       peerMarkersRef.current.forEach((marker) => marker.remove());
+      if (reportMarkerRef.current) {
+        reportMarkerRef.current.remove();
+        reportMarkerRef.current = null;
+      }
       map.remove();
       instanceRef.current = null;
       alertMarkersRef.current = [];
       resourceMarkersRef.current = [];
       peerMarkersRef.current = [];
     };
-  }, [center]);
+  }, [center, onLocationSelect, setLocationMessage]);
 
   useEffect(() => {
     const map = instanceRef.current;
@@ -203,7 +231,7 @@ export function AlertsMap({
     if (!showAlerts) return;
 
     alerts.forEach((alert, index) => {
-      const coordinates = alertCoordinates[keyForCity(city)]?.[alert.title] ?? [center[0] + index * 0.02, center[1] + (index % 2 === 0 ? 0.015 : -0.015)];
+      const coordinates = alert.coordinates ?? alertCoordinates[keyForCity(city)]?.[alert.title] ?? [center[0] + index * 0.02, center[1] + (index % 2 === 0 ? 0.015 : -0.015)];
       const marker = document.createElement('button');
       marker.type = 'button';
       marker.style.width = index === selectedAlertIndex ? '20px' : '16px';
@@ -219,7 +247,7 @@ export function AlertsMap({
         popupHtml(alert.title, alert.summary, `${alert.severity} risk | ${alert.meta.zone ?? city}`),
       );
 
-      const markerInstance = new mapboxgl.Marker(marker).setLngLat(coordinates).setPopup(popup).addTo(map);
+      const markerInstance = new mapboxgl.Marker(marker).setLngLat(coordinates as [number, number]).setPopup(popup).addTo(map);
       alertMarkersRef.current.push(markerInstance);
     });
   }, [alerts, center, city, selectedAlertIndex, showAlerts]);
@@ -234,7 +262,7 @@ export function AlertsMap({
     if (!showResources) return;
 
     resources.forEach((resource, index) => {
-      const coordinates = resourceCoordinates[keyForCity(city)]?.[resource.name] ?? [center[0] - 0.04 + index * 0.018, center[1] - 0.02 + index * 0.01];
+      const coordinates = resource.coordinates ?? resourceCoordinates[keyForCity(city)]?.[resource.name] ?? [center[0] - 0.04 + index * 0.018, center[1] - 0.02 + index * 0.01];
       const marker = document.createElement('button');
       marker.type = 'button';
       marker.style.width = '18px';
@@ -284,6 +312,65 @@ export function AlertsMap({
     });
   }, [peerReports, selectedPeerReportIndex, showPeerReports]);
 
+  // Effect to manage rendering/updating the draggable report marker pin
+  useEffect(() => {
+    const map = instanceRef.current;
+    if (!map) return;
+
+    if (!location) {
+      if (reportMarkerRef.current) {
+        reportMarkerRef.current.remove();
+        reportMarkerRef.current = null;
+      }
+      return;
+    }
+
+    const coords: [number, number] = [location.longitude, location.latitude];
+
+    if (reportMarkerRef.current) {
+      reportMarkerRef.current.setLngLat(coords);
+    } else {
+      const el = document.createElement('div');
+      el.className = 'report-pin-marker';
+      el.style.width = '24px';
+      el.style.height = '24px';
+      el.style.borderRadius = '50%';
+      el.style.backgroundColor = '#ef4444'; // Tailwind red-500
+      el.style.border = '3px solid white';
+      el.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+      el.style.cursor = 'move';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+
+      const dot = document.createElement('div');
+      dot.style.width = '6px';
+      dot.style.height = '6px';
+      dot.style.borderRadius = '50%';
+      dot.style.backgroundColor = 'white';
+      el.appendChild(dot);
+
+      const marker = new mapboxgl.Marker({
+        element: el,
+        draggable: true,
+      })
+        .setLngLat(coords)
+        .addTo(map);
+
+      marker.on('dragend', () => {
+        const lngLat = marker.getLngLat();
+        onLocationSelect?.({
+          latitude: lngLat.lat,
+          longitude: lngLat.lng,
+          accuracyMeters: location.accuracyMeters,
+        });
+        setLocationMessage?.(`Selected location on map: ${lngLat.lat.toFixed(4)}, ${lngLat.lng.toFixed(4)}`);
+      });
+
+      reportMarkerRef.current = marker;
+    }
+  }, [location, onLocationSelect, setLocationMessage]);
+
   useEffect(() => {
     const map = instanceRef.current;
     if (!map) return;
@@ -296,7 +383,7 @@ export function AlertsMap({
     const map = instanceRef.current;
     const selectedAlert = alerts[selectedAlertIndex];
     if (!map || !selectedAlert || !showAlerts) return;
-    const coordinates = alertCoordinates[keyForCity(city)]?.[selectedAlert.title];
+    const coordinates = selectedAlert.coordinates ?? alertCoordinates[keyForCity(city)]?.[selectedAlert.title];
     if (!coordinates) return;
     map.flyTo({ center: coordinates, zoom: 12, duration: 900, essential: true });
   }, [alerts, city, selectedAlertIndex, showAlerts]);
@@ -305,7 +392,7 @@ export function AlertsMap({
     const map = instanceRef.current;
     const selectedResource = resources[selectedResourceIndex];
     if (!map || !selectedResource || !showResources) return;
-    const coordinates = resourceCoordinates[keyForCity(city)]?.[selectedResource.name];
+    const coordinates = selectedResource.coordinates ?? resourceCoordinates[keyForCity(city)]?.[selectedResource.name];
     if (!coordinates) return;
     map.flyTo({ center: coordinates, zoom: 12.2, duration: 900, essential: true });
   }, [city, resources, selectedResourceIndex, showResources]);

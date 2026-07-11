@@ -140,6 +140,7 @@ export const resources = {
         locationRequesting: 'Requesting device location permission...',
         locationReady: 'Location ready, accuracy {{meters}}m.',
         locationBlocked: 'Location permission was blocked or unavailable. Enable it to place the report on the map.',
+        mapTip: 'Tip: Click on the map or drag the red pin to set the hazard location.',
         descriptionPlaceholder: 'Example: road blocked by fallen tree near the flyover',
         peerAlertTypes: {
           road_block: 'Road block',

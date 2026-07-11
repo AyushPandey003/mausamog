@@ -41,6 +41,45 @@ function peerReportsKey(city: string) {
   return `peer-alerts:${normalizeCity(city)}`;
 }
 
+export async function geocode(query: string): Promise<[number, number] | null> {
+  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  if (!token) return null;
+
+  const redis = getRedis();
+  const cacheKey = `geocode:${query.toLowerCase().trim()}`;
+  if (redis) {
+    try {
+      const cached = await redis.get<[number, number]>(cacheKey);
+      if (cached) return cached;
+    } catch (e) {
+      console.error("Redis geocode cache read error:", e);
+    }
+  }
+
+  try {
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&limit=1`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      const center = data.features?.[0]?.center;
+      if (center && Array.isArray(center) && center.length === 2) {
+        const coords = center as [number, number];
+        if (redis) {
+          try {
+            await redis.set(cacheKey, coords, { ex: 60 * 60 * 24 * 7 }); // Cache for 7 days
+          } catch (e) {
+            console.error("Redis geocode cache write error:", e);
+          }
+        }
+        return coords;
+      }
+    }
+  } catch (error) {
+    console.error("Geocoding failed for query:", query, error);
+  }
+  return null;
+}
+
 async function findChecklistProgress(city: string, itemKey: string, userId: string) {
   const db = getDb();
   if (!db) return null;
