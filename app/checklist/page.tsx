@@ -57,7 +57,7 @@ export default async function ChecklistPage() {
               <form key={item.itemKey} action={toggleChecklistAction} className="flex items-start gap-3 rounded-2xl border border-[color:var(--outline-variant)]/50 bg-[color:var(--surface-soft)]/30 p-4 transition-all duration-300 hover:bg-[color:var(--surface-soft)]/60 hover:-translate-y-0.5 hover:shadow-sm hover:border-[color:var(--accent)]/30">
                 <input type="hidden" name="city" value={item.city} />
                 <input type="hidden" name="itemKey" value={item.itemKey} />
-                <button className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200 cursor-pointer ${item.done ? 'border-[color:var(--accent)] bg-[color:var(--accent)] text-white scale-110 shadow-sm shadow-orange-500/20' : 'border-slate-300 bg-white text-transparent hover:border-[color:var(--accent)] hover:scale-105'}`}>
+                <button className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200 cursor-pointer ${item.done ? 'border-accent bg-accent text-white scale-110 shadow-sm shadow-orange-500/20' : 'border-outline-variant/60 bg-surface-strong text-transparent hover:border-accent hover:scale-105'}`}>
                   <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>

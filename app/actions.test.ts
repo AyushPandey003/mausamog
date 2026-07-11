@@ -140,7 +140,11 @@ describe('app actions integration', () => {
     const result = await signupAction(initialState, formDataFrom({ fullName: 'New User', email: 'new@example.com', city: 'Bengaluru' }));
 
     expect(mocks.findOrCreateUserMock).toHaveBeenCalledWith('New User', 'new@example.com');
-    expect(result).toEqual({ status: 'success', message: 'Magic link sent. Check your email to finish signup.' });
+    expect(result).toEqual({
+      status: 'success',
+      message: 'Magic link sent. Check your email to finish signup.',
+      magicLink: 'http://localhost:3000/auth/verify?token=signup-token',
+    });
   });
 
   it('returns a fallback magic link when signup email sending fails', async () => {

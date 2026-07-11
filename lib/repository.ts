@@ -340,14 +340,142 @@ export async function toggleChecklistItem(city: string, itemKey: string, userId:
   await db.update(checklistProgress).set({ done: !row.done }).where(eq(checklistProgress.id, row.id));
 }
 
-export async function getResources(city: string) {
-  const db = getDb();
-  const seededResources = seedRowsForCity(resourcesSeed, city);
-  if (!db) return seededResources;
+export type LocalResourceWithCoords = {
+  id: string;
+  city: string;
+  name: string;
+  kind: string;
+  address: string;
+  phone: string;
+  openStatus: string;
+  meta: Record<string, string>;
+  coordinates?: [number, number];
+};
 
+interface OverpassElement {
+  id: number;
+  lat: number;
+  lon: number;
+  tags?: {
+    name?: string;
+    amenity?: string;
+    'addr:street'?: string;
+    'addr:suburb'?: string;
+    'addr:full'?: string;
+    phone?: string;
+    'contact:phone'?: string;
+    opening_hours?: string;
+  };
+}
+
+export async function getResources(city: string): Promise<LocalResourceWithCoords[]> {
+  const db = getDb();
+  const seededResources: LocalResourceWithCoords[] = (seedRowsForCity(resourcesSeed, city) as unknown[]).map(x => {
+    const item = x as {
+      id?: string;
+      city: string;
+      name: string;
+      kind: string;
+      address: string;
+      phone: string;
+      openStatus: string;
+      meta?: Record<string, string>;
+    };
+    return {
+      id: item.id || randomUUID(),
+      city: item.city,
+      name: item.name,
+      kind: item.kind,
+      address: item.address,
+      phone: item.phone,
+      openStatus: item.openStatus,
+      meta: item.meta || {},
+    };
+  });
+
+  // 1. Try to fetch from Redis cache first
+  const redis = getRedis();
+  const cacheKey = `overpass:resources:${normalizeCity(city)}`;
+  if (redis) {
+    try {
+      const cached = await redis.get<LocalResourceWithCoords[]>(cacheKey);
+      if (cached && cached.length > 0) return cached;
+    } catch (e) {
+      console.error("Redis read error for overpass resources:", e);
+    }
+  }
+
+  // 2. Try to fetch from Overpass API (OpenStreetMap) dynamically
+  try {
+    const coords = await geocode(city);
+    console.log("getResources geocode result for", city, ":", coords);
+    if (coords && coords.length === 2) {
+      const [lon, lat] = coords;
+      const overpassQuery = `[out:json][timeout:15];(node["amenity"="hospital"](around:8000,${lat},${lon});node["amenity"="shelter"](around:8000,${lat},${lon});node["amenity"="community_centre"](around:8000,${lat},${lon}););out 15;`;
+      const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
+      console.log("Fetching Overpass URL:", overpassUrl);
+      
+      const res = await fetch(overpassUrl, {
+        headers: {
+          'User-Agent': 'MausamOG/1.0 (contact: ayushpandey.job@gmail.com)'
+        }
+      });
+      console.log("Overpass fetch status:", res.status, res.statusText);
+      if (res.ok) {
+        const data = await res.json();
+        const elements = (data.elements || []) as OverpassElement[];
+        console.log(`Overpass returned ${elements.length} elements`);
+        const dynamicResources: LocalResourceWithCoords[] = elements.map((el) => {
+          const name = el.tags?.name || (el.tags?.amenity === 'hospital' ? 'Local Clinic/Hospital' : 'Emergency Shelter');
+          const isHospital = el.tags?.amenity === 'hospital';
+          const street = el.tags?.['addr:street'] || '';
+          const suburb = el.tags?.['addr:suburb'] || '';
+          const address = el.tags?.['addr:full'] || (street || suburb ? `${street} ${suburb}`.trim() : 'Local Area');
+          const phone = el.tags?.phone || el.tags?.['contact:phone'] || '112 / Emergency';
+          const openStatus = el.tags?.opening_hours || '24x7 Emergency Support';
+          return {
+            id: el.id.toString(),
+            city,
+            name,
+            kind: isHospital ? 'hospital' : 'shelter',
+            address,
+            phone,
+            openStatus,
+            meta: {},
+            coordinates: [el.lon, el.lat]
+          };
+        });
+
+        if (dynamicResources.length > 0) {
+          if (redis) {
+            try {
+              await redis.set(cacheKey, dynamicResources, { ex: 60 * 60 * 24 }); // Cache for 24 hours
+            } catch (e) {
+              console.error("Redis write error for overpass resources:", e);
+            }
+          }
+          return dynamicResources;
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to fetch dynamic Overpass resources for:", city, error);
+  }
+
+  // 3. Fallback to postgres database or seed data
+  if (!db) return seededResources;
   await ensureSchema();
   const rows = await db.select().from(localResources).where(eq(localResources.city, city));
-  return rows.length ? rows : seededResources;
+  return rows.length ? rows.map(r => ({
+    id: r.id,
+    city: r.city,
+    name: r.name,
+    kind: r.kind,
+    address: r.address,
+    phone: r.phone,
+    openStatus: r.openStatus,
+    meta: r.meta || {},
+  })) : seededResources;
 }
 
 export async function saveTravelAdvisory(city: string, route: string, mode: string, result: TravelAdvisory, source: string) {

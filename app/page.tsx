@@ -53,7 +53,68 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-3 relative z-10">
+          {/* Dynamic Emergency Dial and Progress Dashboard */}
+          <div className="my-6 relative z-10 flex flex-col gap-4">
+            {/* Risk Alert Indicator */}
+            <div className="flex items-center gap-3 rounded-2xl bg-white/5 border border-white/10 p-3.5">
+              <div className="relative flex h-3.5 w-3.5">
+                {alerts.length > 0 ? (
+                  <>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500"></span>
+                  </>
+                ) : (
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span>
+                )}
+              </div>
+              <div className="flex-1 text-left">
+                <span className="text-xs font-bold text-slate-200">
+                  {alerts.length > 0 
+                    ? `Elevated Risk - ${alerts.length} Active Weather Alerts` 
+                    : 'System Status: Safe / Normal Weather'}
+                </span>
+                <p className="text-[11px] text-slate-400">
+                  {alerts.length > 0 
+                    ? 'Check the Alerts tab to see impacted risk zones.' 
+                    : 'No immediate warnings in effect for your current area.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Emergency Hotline Panel */}
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div className="text-left">
+                <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-slate-400">Monsoon Emergency Contacts</span>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs font-bold">
+                <a href="tel:112" className="rounded-xl bg-red-500/20 border border-red-500/30 py-2.5 text-red-300 hover:bg-red-500/35 transition active:scale-95">
+                  112 <span className="block text-[9px] font-normal text-slate-300">National</span>
+                </a>
+                <a href="tel:100" className="rounded-xl bg-orange-500/20 border border-orange-500/30 py-2.5 text-orange-300 hover:bg-orange-500/35 transition active:scale-95">
+                  100 <span className="block text-[9px] font-normal text-slate-300">Police</span>
+                </a>
+                <a href="tel:108" className="rounded-xl bg-sky-500/20 border border-sky-500/30 py-2.5 text-sky-300 hover:bg-sky-500/35 transition active:scale-95">
+                  108 <span className="block text-[9px] font-normal text-slate-300">Medical</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Quick Checklist Progress Bar */}
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div className="flex justify-between items-center text-xs mb-2">
+                <span className="font-mono uppercase tracking-[0.16em] text-slate-400">Checklist Completion</span>
+                <span className="font-bold text-slate-200">{completedCount}/{totalCount} Done</span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-orange-400 to-[#ffb690] h-2 rounded-full transition-all duration-500" 
+                  style={{ width: `${readinessScore}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3 relative z-10">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 flex flex-col justify-between">
               <span className="text-xs uppercase tracking-[0.16em] text-slate-400">{t('dashboard.readiness')}</span>
               <div className="mt-2 flex items-baseline gap-1">
@@ -77,7 +138,7 @@ export default async function HomePage() {
 
       <section className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
         <div className="grid gap-6">
-          <article className="card shadow-md border-[color:var(--outline-variant)] bg-white p-6 relative overflow-hidden">
+          <article className="card shadow-md border-[color:var(--outline-variant)] bg-[color:var(--surface-strong)] p-6 relative overflow-hidden">
             <div className="flex items-center justify-between gap-4 border-b border-[color:var(--outline-variant)]/40 pb-4">
               <div>
                 <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--accent)] font-semibold">{t('dashboard.aiPlan')}</p>
@@ -146,7 +207,7 @@ export default async function HomePage() {
                   <form key={item.itemKey} action={toggleChecklistAction} className="flex items-start gap-3 rounded-2xl border border-[color:var(--outline-variant)]/50 bg-[color:var(--surface-soft)]/30 p-4 transition-all duration-300 hover:bg-[color:var(--surface-soft)]/60 hover:-translate-y-0.5 hover:shadow-sm hover:border-[color:var(--accent)]/30">
                     <input type="hidden" name="city" value={item.city} />
                     <input type="hidden" name="itemKey" value={item.itemKey} />
-                    <button className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200 cursor-pointer ${item.done ? 'border-[color:var(--accent)] bg-[color:var(--accent)] text-white scale-110 shadow-sm shadow-orange-500/20' : 'border-slate-300 bg-white text-transparent hover:border-[color:var(--accent)] hover:scale-105'}`}>
+                    <button className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200 cursor-pointer ${item.done ? 'border-[color:var(--accent)] bg-[color:var(--accent)] text-white scale-110 shadow-sm shadow-orange-500/20' : 'border-slate-300 bg-[color:var(--surface-strong)] text-transparent hover:border-[color:var(--accent)] hover:scale-105'}`}>
                       <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>

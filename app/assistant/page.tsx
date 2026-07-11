@@ -60,7 +60,7 @@ export default async function AssistantPage() {
                   <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-[color:var(--accent)] font-bold">{message.language} | {message.source}</p>
                   <span className="text-[9px] font-mono text-[color:var(--outline)]">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
-                <h1 className="mt-2 text-sm font-bold text-[color:var(--foreground)]">{t('assistant.questionPrefix')}: {message.prompt}</h1>
+                <h3 className="mt-2 text-sm font-bold text-[color:var(--foreground)]">{t('assistant.questionPrefix')}: {message.prompt}</h3>
                 <p className="mt-3 text-xs leading-5 text-[color:var(--muted)] whitespace-pre-wrap">{message.response}</p>
               </div>
             ))

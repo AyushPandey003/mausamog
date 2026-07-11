@@ -23,12 +23,12 @@ export function AssistantForm({ sessionId, defaultCity = DEFAULT_PROFILE.city, d
   const selectedLanguage = defaultLanguage ?? formLanguageValues[currentLanguage];
 
   return (
-    <form action={formAction} className="grid gap-4 rounded-3xl border border-[color:var(--outline-variant)] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+    <form action={formAction} className="grid gap-4 rounded-3xl border border-outline-variant bg-surface-strong p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
       <input type="hidden" name="locale" value={currentLanguage} />
       <input type="hidden" name="sessionId" value={sessionId} />
       <div>
-        <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--accent)] font-semibold">{t('assistant.formEyebrow')}</p>
-        <h2 className="mt-2 text-2xl font-bold text-[color:var(--foreground)] tracking-tight">{t('assistant.formTitle')}</h2>
+        <p className="font-mono text-xs uppercase tracking-[0.18em] text-accent font-semibold">{t('assistant.formEyebrow')}</p>
+        <h1 className="mt-2 text-2xl font-bold text-[color:var(--foreground)] tracking-tight">{t('assistant.formTitle')}</h1>
       </div>
       
       <div className="flex flex-col gap-1.5">
@@ -36,7 +36,7 @@ export function AssistantForm({ sessionId, defaultCity = DEFAULT_PROFILE.city, d
         <input 
           name="city" 
           defaultValue={defaultCity} 
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" 
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" 
           placeholder={t('common.city')}
           required 
         />
@@ -47,7 +47,7 @@ export function AssistantForm({ sessionId, defaultCity = DEFAULT_PROFILE.city, d
         <select 
           name="language" 
           defaultValue={selectedLanguage}
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200"
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200"
         >
           {LANGUAGE_OPTIONS.map((language) => (
             <option key={language}>{language}</option>
@@ -60,7 +60,7 @@ export function AssistantForm({ sessionId, defaultCity = DEFAULT_PROFILE.city, d
         <textarea 
           name="prompt" 
           rows={5} 
-          className="input min-h-24 bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" 
+          className="input min-h-24 bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" 
           placeholder={t('assistant.questionPlaceholder')}
           required 
         />

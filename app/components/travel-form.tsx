@@ -29,11 +29,11 @@ export function TravelForm({
   const selectedLanguage = defaultLanguage ?? formLanguageValues[currentLanguage];
 
   return (
-    <form action={formAction} className="grid gap-4 rounded-3xl border border-[color:var(--outline-variant)] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+    <form action={formAction} className="grid gap-4 rounded-3xl border border-outline-variant bg-surface-strong p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
       <input type="hidden" name="locale" value={currentLanguage} />
       <div>
-        <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--sky)] font-semibold">{t('travel.formEyebrow')}</p>
-        <h2 className="mt-2 text-2xl font-bold text-[color:var(--foreground)] tracking-tight">{t('travel.formTitle')}</h2>
+        <p className="font-mono text-xs uppercase tracking-[0.18em] text-sky font-semibold">{t('travel.formEyebrow')}</p>
+        <h1 className="mt-2 text-2xl font-bold text-[color:var(--foreground)] tracking-tight">{t('travel.formTitle')}</h1>
       </div>
       
       <div className="flex flex-col gap-1.5">
@@ -41,7 +41,7 @@ export function TravelForm({
         <input 
           name="city" 
           defaultValue={defaultCity} 
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--sky)] focus:outline-none transition-all duration-200" 
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-sky focus:outline-none transition-all duration-200" 
           placeholder={t('common.city')}
           required 
         />
@@ -52,7 +52,7 @@ export function TravelForm({
         <input 
           name="route" 
           defaultValue={defaultRoute} 
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--sky)] focus:outline-none transition-all duration-200" 
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-sky focus:outline-none transition-all duration-200" 
           placeholder={t('travel.routePlaceholder')}
           required 
         />
@@ -63,7 +63,7 @@ export function TravelForm({
         <select 
           name="mode" 
           defaultValue={defaultMode} 
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--sky)] focus:outline-none transition-all duration-200"
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-sky focus:outline-none transition-all duration-200"
         >
           {TRANSPORT_MODE_OPTIONS.map((mode) => (
             <option key={mode}>{mode}</option>
@@ -76,7 +76,7 @@ export function TravelForm({
         <select 
           name="language" 
           defaultValue={selectedLanguage}
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--sky)] focus:outline-none transition-all duration-200"
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-sky focus:outline-none transition-all duration-200"
         >
           {LANGUAGE_OPTIONS.map((language) => (
             <option key={language}>{language}</option>

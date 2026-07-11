@@ -88,7 +88,7 @@ export async function loginAction(_: PlanActionState, formData: FormData): Promi
     });
 
     if (email.sent) {
-      return { status: 'success', message: t('actions.loginSent') };
+      return { status: 'success', message: t('actions.loginSent'), magicLink };
     }
 
     return emailFallbackState(t, 'login', email.reason, magicLink);
@@ -119,7 +119,7 @@ export async function signupAction(_: PlanActionState, formData: FormData): Prom
     });
 
     if (email.sent) {
-      return { status: 'success', message: t('actions.signupSent') };
+      return { status: 'success', message: t('actions.signupSent'), magicLink };
     }
 
     return emailFallbackState(t, 'signup', email.reason, magicLink);

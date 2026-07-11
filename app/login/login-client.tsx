@@ -18,7 +18,7 @@ export function LoginClient() {
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0c101b]">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
       <div className="absolute right-4 top-4 z-20">
         <LanguageSwitcher />
       </div>
@@ -42,7 +42,7 @@ export function LoginClient() {
       </div>
 
       <main className="relative z-10 w-full max-w-[440px] px-4">
-        <div className="flex flex-col gap-6 rounded-3xl border border-white/15 bg-white/80 p-6 shadow-2xl backdrop-blur-xl md:p-8 transition-all duration-300 hover:border-white/25">
+        <div className="flex flex-col gap-6 rounded-3xl border border-outline-variant bg-surface-strong/85 p-6 shadow-2xl backdrop-blur-xl md:p-8 transition-all duration-300 hover:border-accent/55">
           <div className="flex flex-col items-center gap-3 border-b border-[color:var(--outline-variant)]/40 pb-4 text-center">
             {/* Custom Weather Shield Icon */}
             <div className="group relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[color:var(--navy)] to-[#1d273d] shadow-md border border-white/10 overflow-hidden">
@@ -53,19 +53,19 @@ export function LoginClient() {
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-[color:var(--foreground)] tracking-tight">MausamOG</h1>
-              <p className="mt-1 text-sm text-[color:var(--muted)]">{t('auth.loginSubtitle')}</p>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">MausamOG</h1>
+              <p className="mt-1 text-sm text-muted">{t('auth.loginSubtitle')}</p>
             </div>
           </div>
 
           <form action={formAction} className="flex flex-col gap-4">
             <input type="hidden" name="locale" value={currentLanguage} />
             <div className="flex flex-col gap-1.5">
-              <label className="font-mono text-xs uppercase tracking-wider text-[color:var(--foreground)]" htmlFor="email">
+              <label className="font-mono text-xs uppercase tracking-wider text-foreground" htmlFor="email">
                 {t('auth.emailAddress')}
               </label>
               <input 
-                className="input w-full bg-white/60 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" 
+                className="input w-full bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" 
                 id="email" 
                 name="email" 
                 placeholder="citizen@mausamog.gov" 
@@ -77,7 +77,7 @@ export function LoginClient() {
             <ActionStatusMessage state={state} idleTone="success" />
 
             <button
-              className="group relative mt-2 flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-[color:var(--accent)] to-[color:var(--accent-strong)] font-semibold text-white shadow-md shadow-orange-500/10 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg hover:shadow-orange-500/25 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50"
+              className="group relative mt-2 flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-accent to-accent-strong font-semibold text-white shadow-md shadow-orange-500/10 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg hover:shadow-orange-500/25 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50"
               disabled={pending}
               type="submit"
             >
@@ -100,9 +100,9 @@ export function LoginClient() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-[color:var(--muted)]">
+          <p className="text-center text-sm text-muted">
             {t('auth.newToApp')}{' '}
-            <Link className="font-bold text-[color:var(--accent)] hover:underline" href="/register">
+            <Link className="font-bold text-accent hover:underline" href="/register">
               {t('auth.createSafetyProfile')}
             </Link>
           </p>

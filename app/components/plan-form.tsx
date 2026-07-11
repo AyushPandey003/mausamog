@@ -1,22 +1,44 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { generatePreparednessPlanAction, type PlanActionState } from '@/app/actions';
 import { ActionStatusMessage } from '@/app/components/action-status-message';
 import { DEFAULT_PROFILE, HOUSING_TYPE_OPTIONS, LANGUAGE_OPTIONS, NEED_OPTIONS } from '@/lib/form-options';
 import { formLanguageValues, supportedLanguages, type SupportedLanguage } from '@/lib/i18n/resources';
+import { useWeatherTheme } from './weather-theme-context';
 
 export function PlanForm() {
   const { i18n, t } = useTranslation();
+  const { weather, refreshLocation, loading: locationLoading } = useWeatherTheme();
+  
   const currentLanguage = supportedLanguages.includes(i18n.language as SupportedLanguage)
     ? (i18n.language as SupportedLanguage)
     : 'en';
+  
   const initialState: PlanActionState = { status: 'idle', message: t('planForm.idle') };
   const [state, formAction, pending] = useActionState(generatePreparednessPlanAction, initialState);
 
+  const [city, setCity] = useState<string>(DEFAULT_PROFILE.city);
+
+  // Sync city value when weather location is auto-detected or updated
+  useEffect(() => {
+    if (weather?.city) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCity(weather.city);
+    }
+  }, [weather?.city]);
+
+  const handleDetectCity = () => {
+    if (weather?.city) {
+      setCity(weather.city);
+    } else {
+      refreshLocation();
+    }
+  };
+
   return (
-    <form action={formAction} className="grid gap-4 rounded-3xl border border-[color:var(--outline-variant)] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
+    <form action={formAction} className="grid gap-4 rounded-3xl border border-[color:var(--outline-variant)] bg-[color:var(--surface-strong)] p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08)]">
       <input type="hidden" name="locale" value={currentLanguage} />
       <div>
         <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--accent)] font-semibold">{t('planForm.eyebrow')}</p>
@@ -24,19 +46,30 @@ export function PlanForm() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <input 
-          name="city" 
-          defaultValue={DEFAULT_PROFILE.city} 
-          aria-label={t('common.city')}
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" 
-          placeholder={t('common.city')}
-          required 
-        />
+        <div className="relative">
+          <input 
+            name="city" 
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            aria-label={t('common.city')}
+            className="input pr-24 bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" 
+            placeholder={t('common.city')}
+            required 
+          />
+          <button
+            type="button"
+            onClick={handleDetectCity}
+            disabled={locationLoading}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-surface-soft hover:bg-outline-variant/30 px-2.5 py-1.5 text-xs font-bold text-[color:var(--foreground)] transition cursor-pointer disabled:opacity-50"
+          >
+            {locationLoading ? '...' : '📍 Detect'}
+          </button>
+        </div>
         <input 
           name="pincode" 
           defaultValue={DEFAULT_PROFILE.pincode} 
           aria-label={t('common.pincode')}
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" 
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" 
           placeholder={t('common.pincode')}
           required 
         />
@@ -44,7 +77,7 @@ export function PlanForm() {
           name="landmark" 
           defaultValue={DEFAULT_PROFILE.landmark} 
           aria-label={t('common.landmark')}
-          className="input sm:col-span-2 bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" 
+          className="input sm:col-span-2 bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" 
           placeholder={t('common.landmark')}
           required 
         />
@@ -52,7 +85,7 @@ export function PlanForm() {
           name="language" 
           defaultValue={formLanguageValues[currentLanguage]}
           aria-label={t('common.language')}
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200"
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200"
         >
           {LANGUAGE_OPTIONS.map((language) => (
             <option key={language}>{language}</option>
@@ -62,7 +95,7 @@ export function PlanForm() {
           name="housingType" 
           defaultValue={DEFAULT_PROFILE.housingType} 
           aria-label={t('planForm.housingType')}
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200"
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200"
         >
           {HOUSING_TYPE_OPTIONS.map((housingType) => (
             <option key={housingType}>{housingType}</option>
@@ -72,7 +105,7 @@ export function PlanForm() {
           name="travelMode" 
           defaultValue={DEFAULT_PROFILE.travelMode} 
           aria-label={t('planForm.travelMode')}
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" 
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" 
           placeholder={t('planForm.travelMode')}
           required 
         />
@@ -80,7 +113,7 @@ export function PlanForm() {
           name="travelRoute" 
           defaultValue={DEFAULT_PROFILE.travelRoute} 
           aria-label={t('planForm.travelRoute')}
-          className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" 
+          className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" 
           placeholder={t('planForm.travelRoute')}
           required 
         />
@@ -89,36 +122,36 @@ export function PlanForm() {
       <div className="grid gap-3 sm:grid-cols-4">
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-mono uppercase text-[color:var(--muted)] pl-1">{t('planForm.adults')}</label>
-          <input name="adults" type="number" min={1} max={12} defaultValue={2} className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" placeholder={t('planForm.adults')} />
+          <input name="adults" type="number" min={1} max={12} defaultValue={2} className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" placeholder={t('planForm.adults')} />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-mono uppercase text-[color:var(--muted)] pl-1">{t('planForm.children')}</label>
-          <input name="children" type="number" min={0} max={12} defaultValue={1} className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" placeholder={t('planForm.children')} />
+          <input name="children" type="number" min={0} max={12} defaultValue={1} className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" placeholder={t('planForm.children')} />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-mono uppercase text-[color:var(--muted)] pl-1">{t('planForm.elderly')}</label>
-          <input name="elderly" type="number" min={0} max={12} defaultValue={1} className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" placeholder={t('planForm.elderly')} />
+          <input name="elderly" type="number" min={0} max={12} defaultValue={1} className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" placeholder={t('planForm.elderly')} />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-mono uppercase text-[color:var(--muted)] pl-1">{t('planForm.pets')}</label>
-          <input name="pets" type="number" min={0} max={12} defaultValue={0} className="input bg-slate-50/50 focus:bg-white focus:border-[color:var(--accent)] focus:outline-none transition-all duration-200" placeholder={t('planForm.pets')} />
+          <input name="pets" type="number" min={0} max={12} defaultValue={0} className="input bg-surface-soft focus:bg-surface-strong focus:border-accent focus:outline-none transition-all duration-200" placeholder={t('planForm.pets')} />
         </div>
       </div>
 
       <label className="flex items-center gap-3 text-sm text-[color:var(--muted)] cursor-pointer select-none pl-1 mt-1 hover:text-[color:var(--foreground)] transition-colors">
-        <input name="floodProne" type="checkbox" className="h-4 w-4 accent-[color:var(--accent)]" /> 
+        <input name="floodProne" type="checkbox" className="h-4 w-4 accent-accent" /> 
         <span>{t('planForm.floodProne')}</span>
       </label>
 
-      <fieldset className="border-t border-slate-100 pt-3">
+      <fieldset className="border-t border-outline-variant/30 pt-3">
         <legend className="text-xs font-semibold font-mono uppercase tracking-wider text-[color:var(--foreground)] mb-2">{t('planForm.additionalNeeds')}</legend>
         <div className="flex flex-wrap gap-2">
           {NEED_OPTIONS.map((option) => (
             <label 
               key={option} 
-              className="flex items-center rounded-full border border-[color:var(--outline-variant)]/60 hover:border-[color:var(--accent)] hover:bg-orange-50/10 px-3 py-1.5 text-xs text-[color:var(--muted)] cursor-pointer select-none transition-all duration-200 bg-slate-50/40"
+              className="flex items-center rounded-full border border-outline-variant/60 hover:border-accent hover:bg-accent/10 px-3 py-1.5 text-xs text-[color:var(--muted)] cursor-pointer select-none transition-all duration-200 bg-surface-soft"
             >
-              <input type="checkbox" name="needs" value={option} className="mr-2 accent-[color:var(--accent)]" />
+              <input type="checkbox" name="needs" value={option} className="mr-2 accent-accent" />
               {option}
             </label>
           ))}

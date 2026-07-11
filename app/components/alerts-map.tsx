@@ -82,7 +82,7 @@ function escapeHtml(value: string) {
 }
 
 function popupHtml(title: string, body: string, meta: string) {
-  return `<div style="font-family: Arial, sans-serif; min-width: 220px"><strong>${escapeHtml(title)}</strong><p style="margin-top:8px; font-size:13px; line-height:1.5">${escapeHtml(body)}</p><p style="margin-top:8px; font-size:11px; text-transform:uppercase; color:#6b7280">${escapeHtml(meta)}</p></div>`;
+  return `<div style="font-family: Arial, sans-serif; min-width: 220px; color: #0f172a;"><strong>${escapeHtml(title)}</strong><p style="margin-top:8px; font-size:13px; line-height:1.5; color: #334155;">${escapeHtml(body)}</p><p style="margin-top:8px; font-size:11px; text-transform:uppercase; color: #64748b;">${escapeHtml(meta)}</p></div>`;
 }
 
 export function AlertsMap({

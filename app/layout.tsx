@@ -4,6 +4,8 @@ import './globals.css';
 import { Header } from './components/header';
 import { I18nProvider } from './components/i18n-provider';
 import { getRequestLanguage } from '@/lib/i18n/server';
+import { WeatherThemeProvider } from './components/weather-theme-context';
+import { WeatherEffects } from './components/weather-effects';
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mausamog.vercel.app';
 const siteName = 'MausamOG';
@@ -54,11 +56,16 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang={language} className="h-full antialiased">
-      <body className="min-h-full bg-[color:var(--background)] text-[color:var(--foreground)]">
-        <I18nProvider initialLanguage={language}>
-          <Header />
-          {children}
-        </I18nProvider>
+      <body className="min-h-full bg-[color:var(--background)] text-[color:var(--foreground)] relative overflow-x-hidden">
+        <WeatherThemeProvider>
+          <I18nProvider initialLanguage={language}>
+            <div className="relative z-10 flex min-h-full flex-col">
+              <Header />
+              <div className="flex-1">{children}</div>
+            </div>
+            <WeatherEffects />
+          </I18nProvider>
+        </WeatherThemeProvider>
       </body>
     </html>
   );

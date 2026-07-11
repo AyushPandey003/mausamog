@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { logoutAction } from '@/app/actions';
 import { LanguageSwitcher } from './language-switcher';
+import { WeatherThemeWidget } from './weather-theme-widget';
 
 type HeaderUser = {
   fullName: string;
@@ -35,7 +36,7 @@ export function HeaderClient({ user }: HeaderClientProps) {
     .slice(0, 2);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[color:var(--outline-variant)] bg-[rgba(247,249,251,0.92)] backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-[color:var(--outline-variant)] bg-[color:color-mix(in_srgb,var(--background)_92%,transparent)] backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0 flex-1">
@@ -58,8 +59,8 @@ export function HeaderClient({ user }: HeaderClientProps) {
                     aria-current={isActive ? 'page' : undefined}
                     className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                       isActive
-                        ? 'border border-[color:var(--accent)] bg-orange-50 text-[color:var(--foreground)] shadow-sm'
-                        : 'border border-[color:var(--outline-variant)] bg-white text-[color:var(--muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--foreground)]'
+                        ? 'border border-[color:var(--accent)] bg-[color:color-mix(in_srgb,var(--accent)_10%,var(--surface-soft))] text-[color:var(--foreground)] shadow-sm'
+                        : 'border border-[color:var(--outline-variant)] bg-[color:var(--surface-strong)] text-[color:var(--muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--foreground)]'
                     }`}
                   >
                     {t(link.labelKey)}
@@ -69,9 +70,10 @@ export function HeaderClient({ user }: HeaderClientProps) {
             </nav>
 
             <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+              <WeatherThemeWidget />
               <LanguageSwitcher compact />
 
-              <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[color:var(--outline-variant)] bg-white px-3 py-2 shadow-sm">
+              <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[color:var(--outline-variant)] bg-[color:var(--surface-strong)] px-3 py-2 shadow-sm">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--navy)] text-xs font-bold text-white">
                   {initials}
                 </div>
