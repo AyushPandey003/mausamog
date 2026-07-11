@@ -2,13 +2,14 @@
 
 MausamOG is a GenAI-powered monsoon preparedness and citizen assistance command center. It helps citizens build a localized safety plan, track emergency readiness, inspect city alerts, get route-aware travel advice, and ask a multilingual monsoon safety assistant for practical guidance.
 
-The app is built with Next.js App Router, Server Actions, TypeScript, Neon Postgres, Drizzle ORM, Upstash Redis, Google Gemini, Gmail OAuth, Mapbox, Tailwind CSS, Zod, and Vitest.
+The app is built with Next.js App Router, Server Actions, TypeScript, i18next, React i18next, Neon Postgres, Drizzle ORM, Upstash Redis, Google Gemini, Gmail OAuth, Mapbox, Tailwind CSS, Zod, and Vitest.
 
 ## What It Does
 
 - Generates personalized monsoon preparedness plans from city, pincode, landmark, household, language, flood-risk, and travel context.
 - Shows a readiness dashboard with active alerts, checklist progress, local resources, and the latest AI-generated plan.
 - Provides a multilingual assistant for concise citizen-safety answers.
+- Supports persistent UI language switching across English, Hindi, Kannada, and Tamil using i18next.
 - Creates travel advisories for routes and travel modes during monsoon conditions.
 - Displays localized alert markers on a Mapbox-powered risk map.
 - Supports magic-link login/signup through Gmail OAuth, with demo-link fallback when email is not configured.
@@ -53,15 +54,18 @@ flowchart TB
     Assistant[/Assistant/]
     Travel[/Travel/]
     Auth[/Login and Register/]
+    I18nProvider[I18n Provider and Language Switcher]
   end
 
   subgraph Server[Server Actions and Route Handlers]
     Actions[app/actions.ts]
     Verify[app/auth/verify/route.ts]
     GoogleCallback[Google OAuth callback]
+    ServerI18n[Server i18n helpers]
   end
 
   subgraph Core[Domain Services]
+    I18nResources[lib/i18n/resources.ts]
     AI[lib/ai.ts]
     Monsoon[lib/monsoon.ts]
     Validation[lib/validation.ts]
@@ -83,8 +87,11 @@ flowchart TB
   Assistant --> Actions
   Travel --> Actions
   Auth --> Actions
+  I18nProvider --> I18nResources
 
+  ServerI18n --> I18nResources
   Actions --> Validation
+  Actions --> ServerI18n
   Actions --> AI
   Actions --> Monsoon
   Actions --> Repo
@@ -98,6 +105,49 @@ flowchart TB
   Email --> Gmail
   Alerts --> Mapbox
 ```
+
+## Internationalization Architecture
+
+MausamOG uses i18next as a shared translation layer for both server-rendered pages and client-side interactions.
+
+```mermaid
+flowchart TB
+  Resources[lib/i18n/resources.ts]
+  ServerHelper[lib/i18n/server.ts]
+  ClientHelper[lib/i18n/client.ts]
+  Provider[app/components/i18n-provider.tsx]
+  Switcher[app/components/language-switcher.tsx]
+  Layout[app/layout.tsx]
+  ServerPages[Server pages]
+  ClientForms[Client forms and auth screens]
+  Actions[app/actions.ts]
+  Cookie[(mausamog-language cookie)]
+  LocalStorage[(mausamog.language localStorage)]
+
+  Resources --> ServerHelper
+  Resources --> ClientHelper
+  ServerHelper --> Layout
+  ServerHelper --> ServerPages
+  ServerHelper --> Actions
+  ClientHelper --> Provider
+  Provider --> ClientForms
+  Switcher --> Cookie
+  Switcher --> LocalStorage
+  Switcher --> Provider
+  Cookie --> ServerHelper
+  LocalStorage --> Provider
+  ClientForms --> Actions
+```
+
+Key decisions:
+
+- `lib/i18n/resources.ts` is the single source for supported locales, labels, form language mappings, and translation dictionaries.
+- `lib/i18n/server.ts` reads the `mausamog-language` cookie and creates a per-request i18next instance for Server Components and Server Actions.
+- `lib/i18n/client.ts` initializes the browser i18next instance used by `react-i18next`.
+- `app/components/i18n-provider.tsx` wraps the app, keeps `<html lang>` in sync, and hydrates from `localStorage` when available.
+- `app/components/language-switcher.tsx` persists language selection to both cookie and `localStorage`, then refreshes the router so server-rendered text updates.
+- Forms submit a hidden `locale` field so Server Actions can return localized validation and status messages even before the next page refresh.
+- Generated AI content, seed alert text, and persisted checklist/resource records are not machine-translated at render time; they remain source content and are localized through generation inputs or future data-level translations.
 
 ## AI Request Lifecycle
 
@@ -239,6 +289,7 @@ erDiagram
 | Layer | Tools |
 | --- | --- |
 | Framework | Next.js App Router, React, TypeScript |
+| Internationalization | i18next, React i18next, cookie and localStorage language persistence |
 | Styling | Tailwind CSS, custom CSS variables |
 | AI | Google Gemini API, deterministic fallback generators |
 | Validation | Zod schemas for form input and AI output |
@@ -353,7 +404,7 @@ The app can still run without Gmail configuration. In that case, login and signu
 ```text
 app/
   actions.ts                  Server actions for auth, plans, checklist, travel, assistant
-  components/                 Reusable dashboard, map, and form components
+  components/                 Reusable dashboard, map, i18n, and form components
   alerts/                     Alert and risk-map page
   assistant/                  Multilingual assistant page
   checklist/                  Emergency checklist page
@@ -369,6 +420,10 @@ lib/
   repository.ts               Data access layer and schema bootstrap
   schema.ts                   Drizzle tables and shared domain types
   validation.ts               Zod input and output schemas
+  i18n/
+    resources.ts              Supported languages and translation resources
+    server.ts                 Cookie-backed server translation helper
+    client.ts                 Browser i18next initialization helper
 scripts/
   seed.ts                     Seed alerts, checklists, and resources
   gmail-oauth.ts              Gmail OAuth URL and token exchange helper
