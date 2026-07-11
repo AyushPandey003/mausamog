@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "seed": "node --env-file=.env --import tsx scripts/seed.ts",
     "gmail:auth-url": "node --env-file=.env --import tsx scripts/gmail-oauth.ts url",
     "gmail:exchange": "node --env-file=.env --import tsx scripts/gmail-oauth.ts exchange",
@@ -19,10 +20,12 @@
     "@upstash/redis": "^1.38.0",
     "drizzle-orm": "^0.45.2",
     "googleapis": "^173.0.0",
+    "i18next": "^26.3.6",
     "mapbox-gl": "^3.26.0",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-i18next": "^17.0.9",
     "zod": "^4.4.3"
   },
   "devDependencies": {

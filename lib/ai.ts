@@ -1,18 +1,36 @@
+import { z } from "zod";
 import { deterministicPreparednessPlan, deterministicTravelAdvisory, parseJsonCandidate } from "./monsoon";
 import { preparednessPlanSchema, travelAdvisorySchema } from "./validation";
 import type { PreparednessInput, PreparednessPlan, TravelAdvisory, WeatherContext } from "./schema";
 
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 const DEFAULT_MODEL = "gemini-2.5-flash";
+const ASSISTANT_MAX_RESPONSE_LENGTH = 900;
 
 type GeminiRequestOptions = {
   mimeType?: string;
   temperature: number;
 };
 
+const geminiResponseSchema = z.object({
+  candidates: z
+    .array(
+      z.object({
+        content: z
+          .object({
+            parts: z.array(z.object({ text: z.string().optional() })).optional(),
+          })
+          .optional(),
+      }),
+    )
+    .optional(),
+});
+
 function extractText(payload: unknown) {
-  const data = payload as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-  return data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "";
+  const parsed = geminiResponseSchema.safeParse(payload);
+  if (!parsed.success) return "";
+
+  return parsed.data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "";
 }
 
 async function callGemini(prompt: string, options: GeminiRequestOptions) {
@@ -35,7 +53,7 @@ async function callGemini(prompt: string, options: GeminiRequestOptions) {
   });
 
   if (!response.ok) return null;
-  return response.json();
+  return response.json() as Promise<unknown>;
 }
 
 export async function generatePreparednessPlan(input: PreparednessInput, weather: WeatherContext): Promise<{ plan: PreparednessPlan; source: string }> {
@@ -83,7 +101,7 @@ export async function generateAssistantAnswer(city: string, language: string, pr
     );
 
     if (!raw) return fallback;
-    const answer = extractText(raw).trim().slice(0, 900);
+    const answer = extractText(raw).trim().slice(0, ASSISTANT_MAX_RESPONSE_LENGTH);
     return answer ? { answer, source: "gemini" } : fallback;
   } catch {
     return fallback;

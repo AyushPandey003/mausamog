@@ -63,3 +63,30 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   70% { box-shadow: 0 0 0 16px rgba(16, 185, 129, 0), 0 8px 22px rgba(15, 23, 42, 0.24); }
   100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 8px 22px rgba(15, 23, 42, 0.24); }
 }
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(40px, -60px) scale(1.15);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1.1);
+  }
+  50% {
+    transform: translate(-40px, 50px) scale(0.9);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 22s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 28s ease-in-out infinite;
+}
+

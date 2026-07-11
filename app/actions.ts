@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { TFunction } from 'i18next';
+import { ZodError } from 'zod';
 import { generateAssistantAnswer, generatePreparednessPlan, generateTravelAdvice } from '@/lib/ai';
 import { sendMagicLinkEmail } from '@/lib/email';
 import { buildWeatherContext } from '@/lib/monsoon';
@@ -27,6 +29,8 @@ import {
 } from '@/lib/repository';
 import { assistantSchema, preparednessSchema, travelSchema, loginSchema, signupSchema, peerAlertReportSchema } from '@/lib/validation';
 import { buildMagicLink, createOpaqueToken, hashToken, getSessionUser, SESSION_COOKIE_NAME } from '@/lib/auth';
+import { getServerTranslation } from '@/lib/i18n/server';
+import { DEFAULT_LANGUAGE, normalizeLanguage } from '@/lib/i18n/resources';
 
 export type PlanActionState = {
   status: 'idle' | 'success' | 'error';
@@ -36,21 +40,24 @@ export type PlanActionState = {
 
 type MagicLinkIntent = 'login' | 'signup';
 
-function errorState(error: unknown, fallbackMessage: string): PlanActionState {
-  return { status: 'error', message: error instanceof Error ? error.message : fallbackMessage };
+function errorState(error: unknown, fallbackMessage: string, validationMessage: string): PlanActionState {
+  return { status: 'error', message: error instanceof ZodError ? validationMessage : fallbackMessage };
 }
 
-function emailFallbackState(intent: MagicLinkIntent, reason: string | undefined, magicLink: string): PlanActionState {
-  const intentLabel = intent === 'signup' ? 'signup' : 'magic link';
+function emailFallbackState(t: TFunction, intent: MagicLinkIntent, reason: string | undefined, magicLink: string): PlanActionState {
+  const intentLabel = intent === 'signup' ? t('actions.signup') : t('actions.magicLink');
   const sendFailed = reason === 'send_failed';
 
   return {
     status: sendFailed ? 'error' : 'success',
-    message: sendFailed
-      ? `Could not send the ${intentLabel} email. Use the demo link below.`
-      : 'Email is not fully configured yet. Use the demo magic link below.',
+    message: sendFailed ? t('actions.emailSendFailed', { intent: intentLabel }) : t('actions.emailNotConfigured'),
     magicLink,
   };
+}
+
+async function getActionTranslation(formData: FormData) {
+  const language = normalizeLanguage(formData.get('locale') ?? DEFAULT_LANGUAGE);
+  return getServerTranslation(language);
 }
 
 function revalidatePaths(paths: string[]) {
@@ -58,6 +65,8 @@ function revalidatePaths(paths: string[]) {
 }
 
 export async function loginAction(_: PlanActionState, formData: FormData): Promise<PlanActionState> {
+  const { t } = await getActionTranslation(formData);
+
   try {
     const input = loginSchema.parse({
       email: formData.get('email'),
@@ -65,7 +74,7 @@ export async function loginAction(_: PlanActionState, formData: FormData): Promi
 
     const user = await getUserByEmail(input.email);
     if (!user) {
-      return { status: 'success', message: 'If that email has a MausamOG account, a magic link has been prepared.' };
+      return { status: 'success', message: t('actions.loginUnknown') };
     }
 
     const token = createOpaqueToken();
@@ -79,16 +88,18 @@ export async function loginAction(_: PlanActionState, formData: FormData): Promi
     });
 
     if (email.sent) {
-      return { status: 'success', message: 'Magic link sent. Check your email to sign in.' };
+      return { status: 'success', message: t('actions.loginSent') };
     }
 
-    return emailFallbackState('login', email.reason, magicLink);
+    return emailFallbackState(t, 'login', email.reason, magicLink);
   } catch (error) {
-    return errorState(error, 'Login failed.');
+    return errorState(error, t('actions.loginFailed'), t('actions.validationError'));
   }
 }
 
 export async function signupAction(_: PlanActionState, formData: FormData): Promise<PlanActionState> {
+  const { t } = await getActionTranslation(formData);
+
   try {
     const input = signupSchema.parse({
       fullName: formData.get('fullName'),
@@ -108,12 +119,12 @@ export async function signupAction(_: PlanActionState, formData: FormData): Prom
     });
 
     if (email.sent) {
-      return { status: 'success', message: 'Magic link sent. Check your email to finish signup.' };
+      return { status: 'success', message: t('actions.signupSent') };
     }
 
-    return emailFallbackState('signup', email.reason, magicLink);
+    return emailFallbackState(t, 'signup', email.reason, magicLink);
   } catch (error) {
-    return errorState(error, 'Registration failed.');
+    return errorState(error, t('actions.signupFailed'), t('actions.validationError'));
   }
 }
 
@@ -154,9 +165,11 @@ async function getRequestOrigin() {
 }
 
 export async function generatePreparednessPlanAction(_: PlanActionState, formData: FormData): Promise<PlanActionState> {
+  const { t } = await getActionTranslation(formData);
+
   try {
     const user = await getSessionUser();
-    if (!user) return { status: 'error', message: 'You must be logged in.' };
+    if (!user) return { status: 'error', message: t('actions.notLoggedIn') };
 
     const input = preparednessSchema.parse({
       city: formData.get('city'),
@@ -180,9 +193,9 @@ export async function generatePreparednessPlanAction(_: PlanActionState, formDat
     const generated = await generatePreparednessPlan(input, weather);
     await savePreparednessPlan(user.id, input, weather, generated.plan, generated.source);
     revalidatePaths(['/', '/alerts', '/travel']);
-    return { status: 'success', message: `Preparedness plan generated using ${generated.source}.` };
+    return { status: 'success', message: t('actions.planGenerated', { source: generated.source }) };
   } catch (error) {
-    return errorState(error, 'Could not generate the preparedness plan.');
+    return errorState(error, t('actions.planFailed'), t('actions.validationError'));
   }
 }
 
@@ -197,9 +210,11 @@ export async function toggleChecklistAction(formData: FormData) {
 }
 
 export async function generateTravelAdviceAction(_: PlanActionState, formData: FormData): Promise<PlanActionState> {
+  const { t } = await getActionTranslation(formData);
+
   try {
     const user = await getSessionUser();
-    if (!user) return { status: 'error', message: 'You must be logged in.' };
+    if (!user) return { status: 'error', message: t('actions.notLoggedIn') };
 
     const data = travelSchema.parse({
       city: formData.get('city'),
@@ -210,16 +225,18 @@ export async function generateTravelAdviceAction(_: PlanActionState, formData: F
     const generated = await generateTravelAdvice(data.city, data.route, data.mode, data.language);
     await saveTravelAdvisory(data.city, data.route, data.mode, generated.result, generated.source);
     revalidatePath('/travel');
-    return { status: 'success', message: `Travel advisory refreshed using ${generated.source}.` };
+    return { status: 'success', message: t('actions.travelGenerated', { source: generated.source }) };
   } catch (error) {
-    return errorState(error, 'Could not generate travel advice.');
+    return errorState(error, t('actions.travelFailed'), t('actions.validationError'));
   }
 }
 
 export async function assistantAction(_: PlanActionState, formData: FormData): Promise<PlanActionState> {
+  const { t } = await getActionTranslation(formData);
+
   try {
     const user = await getSessionUser();
-    if (!user) return { status: 'error', message: 'You must be logged in.' };
+    if (!user) return { status: 'error', message: t('actions.notLoggedIn') };
 
     const data = assistantSchema.parse({
       sessionId: formData.get('sessionId'),
@@ -234,23 +251,25 @@ export async function assistantAction(_: PlanActionState, formData: FormData): P
       const count = await redis.incr(key);
       if (count === 1) await redis.expire(key, 60);
       if (count > 6) {
-        return { status: 'error', message: 'Slow down a bit. Please wait before sending more assistant requests.' };
+        return { status: 'error', message: t('actions.assistantRateLimit') };
       }
     }
 
     const answer = await generateAssistantAnswer(data.city, data.language, data.prompt);
     await saveAssistantMessage(user.id, data.sessionId, data.prompt, answer.answer, data.language, answer.source);
     revalidatePath('/assistant');
-    return { status: 'success', message: `Assistant answered using ${answer.source}.` };
+    return { status: 'success', message: t('actions.assistantAnswered', { source: answer.source }) };
   } catch (error) {
-    return errorState(error, 'Assistant request failed.');
+    return errorState(error, t('actions.assistantFailed'), t('actions.validationError'));
   }
 }
 
 export async function reportPeerAlertAction(_: PlanActionState, formData: FormData): Promise<PlanActionState> {
+  const { t } = await getActionTranslation(formData);
+
   try {
     const user = await getSessionUser();
-    if (!user) return { status: 'error', message: 'You must be logged in to report an alert.' };
+    if (!user) return { status: 'error', message: t('actions.alertLoginRequired') };
 
     const input = peerAlertReportSchema.parse({
       city: formData.get('city'),
@@ -268,15 +287,15 @@ export async function reportPeerAlertAction(_: PlanActionState, formData: FormDa
       const count = await redis.incr(key);
       if (count === 1) await redis.expire(key, 60);
       if (count > 3) {
-        return { status: 'error', message: 'Please wait before reporting another field alert.' };
+        return { status: 'error', message: t('actions.peerAlertRateLimit') };
       }
     }
 
     await savePeerAlertReport(input, user.id);
     revalidatePath('/alerts');
-    return { status: 'success', message: 'Peer alert reported. It is now visible on the live map.' };
+    return { status: 'success', message: t('actions.peerAlertSaved') };
   } catch (error) {
-    return errorState(error, 'Could not report the peer alert.');
+    return errorState(error, t('actions.peerAlertFailed'), t('actions.validationError'));
   }
 }
 

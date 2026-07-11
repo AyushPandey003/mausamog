@@ -90,6 +90,7 @@ export function AlertsMap({
   peerReports,
   selectedAlertIndex,
   selectedResourceIndex,
+  selectedPeerReportIndex,
   showAlerts,
   showResources,
   showRiskZones,
@@ -101,6 +102,7 @@ export function AlertsMap({
   peerReports: PeerAlertReport[];
   selectedAlertIndex: number;
   selectedResourceIndex: number;
+  selectedPeerReportIndex: number;
   showAlerts: boolean;
   showResources: boolean;
   showRiskZones: boolean;
@@ -262,11 +264,13 @@ export function AlertsMap({
 
     if (!showPeerReports) return;
 
-    peerReports.forEach((report) => {
+    peerReports.forEach((report, index) => {
       const marker = document.createElement('button');
       marker.type = 'button';
       marker.className = `peer-alert-marker peer-alert-marker-${report.severity}`;
       marker.setAttribute('aria-label', `${peerTypeLabel[report.type]} report`);
+      marker.style.transform = index === selectedPeerReportIndex ? 'scale(1.18)' : 'scale(1)';
+      marker.style.boxShadow = index === selectedPeerReportIndex ? '0 0 0 5px rgba(16,185,129,0.22)' : '';
 
       const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(
         popupHtml(peerTypeLabel[report.type], report.description, `${report.severity} peer report | ${new Date(report.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`),
@@ -278,7 +282,7 @@ export function AlertsMap({
         .addTo(map);
       peerMarkersRef.current.push(markerInstance);
     });
-  }, [peerReports, showPeerReports]);
+  }, [peerReports, selectedPeerReportIndex, showPeerReports]);
 
   useEffect(() => {
     const map = instanceRef.current;
@@ -308,10 +312,10 @@ export function AlertsMap({
 
   useEffect(() => {
     const map = instanceRef.current;
-    const latestPeerReport = peerReports[0];
-    if (!map || !latestPeerReport || !showPeerReports) return;
-    map.flyTo({ center: [latestPeerReport.longitude, latestPeerReport.latitude], zoom: 13, duration: 900, essential: true });
-  }, [peerReports, showPeerReports]);
+    const selectedPeerReport = peerReports[selectedPeerReportIndex] ?? peerReports[0];
+    if (!map || !selectedPeerReport || !showPeerReports) return;
+    map.flyTo({ center: [selectedPeerReport.longitude, selectedPeerReport.latitude], zoom: 13, duration: 900, essential: true });
+  }, [peerReports, selectedPeerReportIndex, showPeerReports]);
 
   const hasToken = Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
 

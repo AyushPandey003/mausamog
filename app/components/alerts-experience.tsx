@@ -1,8 +1,10 @@
 'use client';
 
 import { useActionState, useMemo, useState } from 'react';
-import { reportPeerAlertAction, type PlanActionState } from '@/app/actions';
+import { useTranslation } from 'react-i18next';
+import { reportPeerAlertAction } from '@/app/actions';
 import { ActionStatusMessage } from '@/app/components/action-status-message';
+import { supportedLanguages, type SupportedLanguage } from '@/lib/i18n/resources';
 import type { PeerAlertReport } from '@/lib/schema';
 import { AlertsMap } from './alerts-map';
 
@@ -25,15 +27,13 @@ type ResourceItem = {
   meta: Record<string, string | undefined>;
 };
 
-const initialReportState: PlanActionState = { status: 'idle', message: '' };
-
 const peerAlertTypes = [
-  { value: 'road_block', label: 'Road block' },
-  { value: 'landslide', label: 'Landslide' },
-  { value: 'waterlogging', label: 'Waterlogging' },
-  { value: 'tree_fall', label: 'Tree fall' },
-  { value: 'power_line', label: 'Power line' },
-  { value: 'other', label: 'Other' },
+  { value: 'road_block', labelKey: 'alertsPage.peerAlertTypes.road_block' },
+  { value: 'landslide', labelKey: 'alertsPage.peerAlertTypes.landslide' },
+  { value: 'waterlogging', labelKey: 'alertsPage.peerAlertTypes.waterlogging' },
+  { value: 'tree_fall', labelKey: 'alertsPage.peerAlertTypes.tree_fall' },
+  { value: 'power_line', labelKey: 'alertsPage.peerAlertTypes.power_line' },
+  { value: 'other', labelKey: 'alertsPage.peerAlertTypes.other' },
 ] as const;
 
 export function AlertsExperience({
@@ -47,13 +47,18 @@ export function AlertsExperience({
   resources: ResourceItem[];
   peerReports: PeerAlertReport[];
 }) {
+  const { i18n, t } = useTranslation();
+  const currentLanguage = supportedLanguages.includes(i18n.language as SupportedLanguage)
+    ? (i18n.language as SupportedLanguage)
+    : 'en';
   const [selectedAlertIndex, setSelectedAlertIndex] = useState(0);
   const [selectedResourceIndex, setSelectedResourceIndex] = useState(0);
   const [showAlerts, setShowAlerts] = useState(true);
   const [showResources, setShowResources] = useState(true);
   const [showRiskZones, setShowRiskZones] = useState(true);
   const [showPeerReports, setShowPeerReports] = useState(true);
-  const [reportState, reportAction, reportPending] = useActionState(reportPeerAlertAction, initialReportState);
+  const [selectedPeerReportIndex, setSelectedPeerReportIndex] = useState(0);
+  const [reportState, reportAction, reportPending] = useActionState(reportPeerAlertAction, { status: 'idle', message: '' });
   const [location, setLocation] = useState<{ latitude: number; longitude: number; accuracyMeters?: number } | null>(null);
   const [locationMessage, setLocationMessage] = useState('');
 
@@ -76,11 +81,11 @@ export function AlertsExperience({
 
   function requestReportLocation() {
     if (!navigator.geolocation) {
-      setLocationMessage('Location is not available in this browser.');
+      setLocationMessage(t('alertsPage.locationUnavailable'));
       return;
     }
 
-    setLocationMessage('Requesting device location permission...');
+    setLocationMessage(t('alertsPage.locationRequesting'));
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocation({
@@ -88,9 +93,9 @@ export function AlertsExperience({
           longitude: position.coords.longitude,
           accuracyMeters: position.coords.accuracy,
         });
-        setLocationMessage(`Location ready, accuracy ${Math.round(position.coords.accuracy)}m.`);
+        setLocationMessage(t('alertsPage.locationReady', { meters: Math.round(position.coords.accuracy) }));
       },
-      () => setLocationMessage('Location permission was blocked or unavailable. Enable it to place the report on the map.'),
+      () => setLocationMessage(t('alertsPage.locationBlocked')),
       { enableHighAccuracy: true, maximumAge: 30_000, timeout: 10_000 },
     );
   }
@@ -100,24 +105,24 @@ export function AlertsExperience({
       <section className="card min-h-[480px] overflow-hidden bg-[linear-gradient(135deg,#eaf4ff,#f7f9fb)] shadow-md">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--sky)] font-semibold">Interactive risk map</p>
-            <h2 className="mt-2 text-3xl font-extrabold text-[color:var(--foreground)]">Risk zones and alert overlays</h2>
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--sky)] font-semibold">{t('alertsPage.interactiveRiskMap')}</p>
+            <h2 className="mt-2 text-3xl font-extrabold text-[color:var(--foreground)]">{t('alertsPage.riskZonesTitle')}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-              Interactive Mapbox view centered on <strong>{city}</strong> showing active risk areas, local resources, and peer reports.
+              {t('alertsPage.mapIntro', { city })}
             </p>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em]">
-            <div className="rounded-2xl border border-[color:var(--outline-variant)] bg-white px-3 py-2 text-[color:var(--muted)]">{stats.alertCount} alerts</div>
-            <div className="rounded-2xl border border-[color:var(--outline-variant)] bg-white px-3 py-2 text-[color:var(--muted)]">{stats.peerCount} peer</div>
-            <div className="rounded-2xl border border-[color:var(--outline-variant)] bg-white px-3 py-2 text-[color:var(--accent)]">{stats.highestSeverity} risk</div>
+            <div className="rounded-2xl border border-[color:var(--outline-variant)] bg-white px-3 py-2 text-[color:var(--muted)]">{stats.alertCount} {t('alertsPage.alerts')}</div>
+            <div className="rounded-2xl border border-[color:var(--outline-variant)] bg-white px-3 py-2 text-[color:var(--muted)]">{stats.peerCount} {t('alertsPage.peer')}</div>
+            <div className="rounded-2xl border border-[color:var(--outline-variant)] bg-white px-3 py-2 text-[color:var(--accent)]">{stats.highestSeverity} {t('common.risk')}</div>
           </div>
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <button type="button" onClick={() => setShowAlerts((value) => !value)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showAlerts ? 'bg-[color:var(--accent)] text-white' : 'border border-[color:var(--outline-variant)] bg-white text-[color:var(--muted)]'}`}>Alerts</button>
-          <button type="button" onClick={() => setShowResources((value) => !value)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showResources ? 'bg-[color:var(--foreground)] text-white' : 'border border-[color:var(--outline-variant)] bg-white text-[color:var(--muted)]'}`}>Resources</button>
-          <button type="button" onClick={() => setShowRiskZones((value) => !value)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showRiskZones ? 'bg-[color:var(--sky)] text-white' : 'border border-[color:var(--outline-variant)] bg-white text-[color:var(--muted)]'}`}>Risk zones</button>
-          <button type="button" onClick={() => setShowPeerReports((value) => !value)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showPeerReports ? 'bg-emerald-600 text-white' : 'border border-[color:var(--outline-variant)] bg-white text-[color:var(--muted)]'}`}>Peer reports</button>
+          <button type="button" onClick={() => setShowAlerts((value) => !value)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showAlerts ? 'bg-[color:var(--accent)] text-white' : 'border border-[color:var(--outline-variant)] bg-white text-[color:var(--muted)]'}`}>{t('nav.alerts')}</button>
+          <button type="button" onClick={() => setShowResources((value) => !value)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showResources ? 'bg-[color:var(--foreground)] text-white' : 'border border-[color:var(--outline-variant)] bg-white text-[color:var(--muted)]'}`}>{t('nav.resources')}</button>
+          <button type="button" onClick={() => setShowRiskZones((value) => !value)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showRiskZones ? 'bg-[color:var(--sky)] text-white' : 'border border-[color:var(--outline-variant)] bg-white text-[color:var(--muted)]'}`}>{t('alertsPage.riskZones')}</button>
+          <button type="button" onClick={() => setShowPeerReports((value) => !value)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${showPeerReports ? 'bg-emerald-600 text-white' : 'border border-[color:var(--outline-variant)] bg-white text-[color:var(--muted)]'}`}>{t('alertsPage.peerReports')}</button>
         </div>
 
         <div className="mt-6 h-full min-h-[420px] overflow-hidden rounded-2xl border border-[color:var(--outline-variant)]">
@@ -128,6 +133,7 @@ export function AlertsExperience({
             peerReports={peerReports}
             selectedAlertIndex={selectedAlertIndex}
             selectedResourceIndex={selectedResourceIndex}
+            selectedPeerReportIndex={selectedPeerReportIndex}
             showAlerts={showAlerts}
             showResources={showResources}
             showRiskZones={showRiskZones}
@@ -138,67 +144,53 @@ export function AlertsExperience({
 
       <aside className="grid gap-6">
         <section className="card shadow-md">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-emerald-700 font-semibold">Peer field report</p>
-          <h2 className="mt-2 text-xl font-bold text-[color:var(--foreground)]">Report a local hazard</h2>
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-emerald-700 font-semibold">{t('alertsPage.peerFieldReport')}</p>
+          <h2 className="mt-2 text-xl font-bold text-[color:var(--foreground)]">{t('alertsPage.reportLocalHazard')}</h2>
           <form action={reportAction} className="mt-5 grid gap-3">
+            <input type="hidden" name="locale" value={currentLanguage} />
             <input type="hidden" name="city" value={city} />
             <input type="hidden" name="latitude" value={location?.latitude ?? ''} />
             <input type="hidden" name="longitude" value={location?.longitude ?? ''} />
             <input type="hidden" name="accuracyMeters" value={location?.accuracyMeters ?? ''} />
             <select name="type" className="input" defaultValue="road_block">
               {peerAlertTypes.map((type) => (
-                <option key={type.value} value={type.value}>{type.label}</option>
+                <option key={type.value} value={type.value}>{t(type.labelKey)}</option>
               ))}
             </select>
             <select name="severity" className="input" defaultValue="moderate">
-              <option value="low">Low</option>
-              <option value="moderate">Moderate</option>
-              <option value="high">High</option>
+              <option value="low">{t('alertsPage.severity.low')}</option>
+              <option value="moderate">{t('alertsPage.severity.moderate')}</option>
+              <option value="high">{t('alertsPage.severity.high')}</option>
             </select>
-            <textarea name="description" className="input min-h-24" maxLength={220} placeholder="Example: road blocked by fallen tree near the flyover" required />
+            <textarea name="description" className="input min-h-24" maxLength={220} placeholder={t('alertsPage.descriptionPlaceholder')} required />
             <button type="button" onClick={requestReportLocation} className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100">
-              Use my location
+              {t('alertsPage.useMyLocation')}
             </button>
             {locationMessage ? <p className="text-xs leading-5 text-[color:var(--muted)]">{locationMessage}</p> : null}
             <ActionStatusMessage state={reportState} />
             <button disabled={reportPending || !location} className="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60">
-              {reportPending ? 'Reporting...' : 'Send peer alert'}
+              {reportPending ? t('alertsPage.reporting') : t('alertsPage.sendPeerAlert')}
             </button>
           </form>
         </section>
 
         <section className="card shadow-md">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-emerald-700 font-semibold">Crowd layer</p>
-          <h2 className="mt-2 text-xl font-bold text-[color:var(--foreground)]">Recent peer alerts</h2>
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-emerald-700 font-semibold">{t('alertsPage.crowdLayer')}</p>
+          <h2 className="mt-2 text-xl font-bold text-[color:var(--foreground)]">{t('alertsPage.recentPeerAlerts')}</h2>
           <div className="mt-6 space-y-3">
             {peerReports.length === 0 ? (
-              <p className="py-4 text-center text-sm text-[color:var(--muted)]">No peer reports for {city} yet.</p>
+              <p className="py-4 text-center text-sm text-[color:var(--muted)]">{t('alertsPage.noPeerReports', { city })}</p>
             ) : (
-              peerReports.map((report) => (
-                <div key={report.id} className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+              peerReports.map((report, index) => (
+                <button
+                  key={report.id}
+                  type="button"
+                  onClick={() => setSelectedPeerReportIndex(index)}
+                  className={`w-full rounded-2xl border p-4 text-left transition ${selectedPeerReportIndex === index ? 'border-emerald-500 bg-emerald-100/70 shadow-sm' : 'border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/60'}`}
+                >
                   <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-emerald-800 font-bold">{report.type.replace('_', ' ')} | {report.severity}</p>
                   <p className="mt-2 text-sm leading-6 text-[color:var(--foreground)]">{report.description}</p>
                   <p className="mt-2 text-[10px] text-[color:var(--muted)]">{new Date(report.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section className="card shadow-md">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--accent)] font-semibold">Active alert stack</p>
-          <h2 className="mt-2 text-xl font-bold text-[color:var(--foreground)]">Monsoon warnings</h2>
-          <p className="mt-1 text-xs text-[color:var(--muted)]">Click an alert to focus the map.</p>
-          <div className="mt-6 space-y-3">
-            {alerts.length === 0 ? (
-              <p className="py-4 text-center text-sm text-[color:var(--muted)]">No active alerts for {city} at this time.</p>
-            ) : (
-              alerts.map((alert, index) => (
-                <button key={alert.title} type="button" onClick={() => setSelectedAlertIndex(index)} className={`w-full rounded-2xl border p-4 text-left transition ${selectedAlertIndex === index ? 'border-[color:var(--accent)] bg-orange-50' : 'border-[color:var(--outline-variant)]/60 bg-[color:var(--surface-soft)]/45 hover:bg-[color:var(--surface-soft)]'}`}>
-                  <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-[color:var(--accent)] font-bold">{alert.severity}</p>
-                  <h3 className="mt-1 text-base font-bold text-[color:var(--foreground)]">{alert.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{alert.summary}</p>
-                  <p className="mt-3 text-[10px] font-mono uppercase tracking-[0.1em] text-[color:var(--muted)]">{alert.meta.zone ?? city} | {alert.meta.window ?? 'Active'}</p>
                 </button>
               ))
             )}
@@ -206,9 +198,29 @@ export function AlertsExperience({
         </section>
 
         <section className="card shadow-md">
-          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--sky)] font-semibold">Nearby help</p>
-          <h2 className="mt-2 text-xl font-bold text-[color:var(--foreground)]">Emergency resources</h2>
-          <p className="mt-1 text-xs text-[color:var(--muted)]">Click a resource to jump to it on the map.</p>
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--accent)] font-semibold">{t('alertsPage.activeAlertStack')}</p>
+          <h2 className="mt-2 text-xl font-bold text-[color:var(--foreground)]">{t('alertsPage.monsoonWarnings')}</h2>
+          <p className="mt-1 text-xs text-[color:var(--muted)]">{t('alertsPage.clickAlert')}</p>
+          <div className="mt-6 space-y-3">
+            {alerts.length === 0 ? (
+              <p className="py-4 text-center text-sm text-[color:var(--muted)]">{t('alertsPage.noActiveAlertsNow', { city })}</p>
+            ) : (
+              alerts.map((alert, index) => (
+                <button key={alert.title} type="button" onClick={() => setSelectedAlertIndex(index)} className={`w-full rounded-2xl border p-4 text-left transition ${selectedAlertIndex === index ? 'border-[color:var(--accent)] bg-orange-50' : 'border-[color:var(--outline-variant)]/60 bg-[color:var(--surface-soft)]/45 hover:bg-[color:var(--surface-soft)]'}`}>
+                  <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-[color:var(--accent)] font-bold">{alert.severity}</p>
+                  <h3 className="mt-1 text-base font-bold text-[color:var(--foreground)]">{alert.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{alert.summary}</p>
+                  <p className="mt-3 text-[10px] font-mono uppercase tracking-[0.1em] text-[color:var(--muted)]">{alert.meta.zone ?? city} | {alert.meta.window ?? t('alertsPage.active')}</p>
+                </button>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="card shadow-md">
+          <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--sky)] font-semibold">{t('alertsPage.nearbyHelp')}</p>
+          <h2 className="mt-2 text-xl font-bold text-[color:var(--foreground)]">{t('alertsPage.emergencyResources')}</h2>
+          <p className="mt-1 text-xs text-[color:var(--muted)]">{t('alertsPage.clickResource')}</p>
           <div className="mt-6 space-y-3">
             {resources.map((resource, index) => (
               <button key={resource.name} type="button" onClick={() => setSelectedResourceIndex(index)} className={`w-full rounded-2xl border p-4 text-left transition ${selectedResourceIndex === index ? 'border-[color:var(--foreground)] bg-slate-50' : 'border-[color:var(--outline-variant)]/60 bg-white hover:bg-[color:var(--surface-soft)]'}`}>
@@ -223,7 +235,7 @@ export function AlertsExperience({
 
         {(selectedAlert || selectedResource) && (
           <section className="card shadow-md">
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--accent)] font-semibold">Focused context</p>
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-[color:var(--accent)] font-semibold">{t('alertsPage.focusedContext')}</p>
             {selectedAlert ? (
               <div className="mt-3 rounded-2xl bg-[color:var(--surface-soft)] p-4">
                 <h3 className="font-bold text-[color:var(--foreground)]">{selectedAlert.title}</h3>
@@ -233,7 +245,7 @@ export function AlertsExperience({
             {selectedResource ? (
               <div className="mt-3 rounded-2xl bg-white p-4 border border-[color:var(--outline-variant)]">
                 <h3 className="font-bold text-[color:var(--foreground)]">{selectedResource.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{selectedResource.meta.support ?? 'Emergency support available.'}</p>
+                <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{selectedResource.meta.support ?? t('alertsPage.emergencySupportAvailable')}</p>
               </div>
             ) : null}
           </section>
