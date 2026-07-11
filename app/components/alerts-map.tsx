@@ -324,14 +324,23 @@ export function AlertsMap({
       {hasToken ? (
         <div ref={mapRef} className="h-full w-full" aria-label="Monsoon risk map" />
       ) : (
-        <div className="grid h-full place-items-center text-center">
-          <div>
-            <p className="text-lg font-semibold">Map token not configured</p>
-            <p className="mt-2 max-w-md text-sm leading-6 text-[color:var(--muted)]">Add NEXT_PUBLIC_MAPBOX_TOKEN to enable alert overlays, shelters, route risk markers, and peer reports.</p>
+        <div className="relative w-full h-full">
+          {/* Map placeholder background image from Stitch */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-60 mix-blend-luminosity" 
+            style={{ backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuAS5wFaCFFaul66q9aOsCdSlnYdRZkK2pWcOVHImb8be15v0QiGFQrp0nhsCNH8tgMB71Aq1_fBF513wcrAIfz0PM2lYJ8layo2d5Bn8fMMlHAcTvjS7a7t544CyJhwC9WDYvb-257r3imTLn2QVdAfHN-AmqjMs4NC4AO4O6QAMWDYJZvWNCOdHaKt0tYpTWX-JgEGS5cKv1YLeFj8YBA5P3XjAEvs3MlFCff0-1kJgZACRxFJyJvxsABO2J6krzui6tVzsdbdK_8')` }} 
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--background)] via-transparent to-transparent opacity-80" />
+          
+          <div className="absolute inset-0 flex items-center justify-center p-6 text-center z-10">
+            <div className="rounded-2xl border border-white/20 bg-white/70 p-6 shadow-lg backdrop-blur-md max-w-md">
+              <p className="text-lg font-bold text-[color:var(--foreground)]">Map token not configured</p>
+              <p className="mt-2 text-xs leading-relaxed text-[color:var(--muted)]">Add NEXT_PUBLIC_MAPBOX_TOKEN to enable alert overlays, shelters, route risk markers, and peer reports.</p>
+            </div>
           </div>
         </div>
       )}
-      <div className="pointer-events-none absolute left-4 top-4 rounded-2xl bg-white/92 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--foreground)] shadow-sm">
+      <div className="pointer-events-none absolute left-4 top-4 rounded-2xl bg-white/92 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--foreground)] shadow-sm z-10">
         {city} live risk view
       </div>
     </div>

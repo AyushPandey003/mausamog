@@ -26,6 +26,12 @@ export function RegisterClient() {
       <div className="relative hidden w-1/2 items-center justify-center overflow-hidden border-r border-white/10 p-12 md:flex">
         {/* Dynamic atmospheric grid backdrop */}
         <div className="absolute inset-0 z-0">
+          {/* Weather satellite cloud background from Stitch */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity" 
+            style={{ backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuAF8oEVN7MMNMAGwAkSdq50LIRd1GcsZT96kE_hNoIF1TcNtXa_duD8VocAP_FDt4JpnxjdP86UJoiJ4Ag5nPw5CNP-OOj5Lq0H5SkFVja5DPRuKiMqO8xO_6uUPiu_SyCw9zXBxiYZv-67kCf3b5d6ix5ihxghuHq1jHFAnxMYKx3AMAqxd82vSAw9V2FgVHaFRDZY0cstXKXh4Emd2GTRHuZnqoCRDCpSUj4rU2Ucc-uSdm5XTm6slO7QK6ZK1ZiXHRVep8gTTgU')` }} 
+          />
+          
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:40px_40px]" />
           <div className="animate-float-slow absolute top-[20%] right-[10%] h-[300px] w-[300px] rounded-full bg-[color:var(--accent)]/10 blur-[90px]" />
           <div className="animate-float-reverse absolute bottom-[20%] left-[10%] h-[350px] w-[350px] rounded-full bg-[color:var(--sky)]/10 blur-[100px]" />
