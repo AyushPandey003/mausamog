@@ -43,3 +43,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 ::selection { background: #ffd7be; color: #191c1e; }
+
+.peer-alert-marker {
+  width: 22px;
+  height: 22px;
+  border: 3px solid white;
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55), 0 8px 22px rgba(15, 23, 42, 0.24);
+  animation: peer-alert-pulse 1.7s ease-out infinite;
+}
+
+.peer-alert-marker-low { background: #0284c7; }
+.peer-alert-marker-moderate { background: #f97316; }
+.peer-alert-marker-high { background: #dc2626; }
+
+@keyframes peer-alert-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55), 0 8px 22px rgba(15, 23, 42, 0.24); }
+  70% { box-shadow: 0 0 0 16px rgba(16, 185, 129, 0), 0 8px 22px rgba(15, 23, 42, 0.24); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 8px 22px rgba(15, 23, 42, 0.24); }
+}

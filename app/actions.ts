@@ -16,14 +16,16 @@ import {
   getChecklist,
   getLatestPlan,
   getLatestTravelAdvisory,
+  getPeerAlertReports,
   getResources,
   getUserByEmail,
   saveAssistantMessage,
+  savePeerAlertReport,
   savePreparednessPlan,
   saveTravelAdvisory,
   toggleChecklistItem,
 } from '@/lib/repository';
-import { assistantSchema, preparednessSchema, travelSchema, loginSchema, signupSchema } from '@/lib/validation';
+import { assistantSchema, preparednessSchema, travelSchema, loginSchema, signupSchema, peerAlertReportSchema } from '@/lib/validation';
 import { buildMagicLink, createOpaqueToken, hashToken, getSessionUser, SESSION_COOKIE_NAME } from '@/lib/auth';
 
 export type PlanActionState = {
@@ -245,6 +247,39 @@ export async function assistantAction(_: PlanActionState, formData: FormData): P
   }
 }
 
+export async function reportPeerAlertAction(_: PlanActionState, formData: FormData): Promise<PlanActionState> {
+  try {
+    const user = await getSessionUser();
+    if (!user) return { status: 'error', message: 'You must be logged in to report an alert.' };
+
+    const input = peerAlertReportSchema.parse({
+      city: formData.get('city'),
+      type: formData.get('type'),
+      severity: formData.get('severity'),
+      description: formData.get('description'),
+      latitude: formData.get('latitude'),
+      longitude: formData.get('longitude'),
+      accuracyMeters: formData.get('accuracyMeters') || undefined,
+    });
+
+    const redis = getRedis();
+    if (redis) {
+      const key = `ratelimit:peer-alert:${user.id}`;
+      const count = await redis.incr(key);
+      if (count === 1) await redis.expire(key, 60);
+      if (count > 3) {
+        return { status: 'error', message: 'Please wait before reporting another field alert.' };
+      }
+    }
+
+    await savePeerAlertReport(input, user.id);
+    revalidatePath('/alerts');
+    return { status: 'success', message: 'Peer alert reported. It is now visible on the live map.' };
+  } catch (error) {
+    return errorState(error, 'Could not report the peer alert.');
+  }
+}
+
 export async function getHomeData() {
   const user = await getSessionUser();
   if (!user) {
@@ -269,4 +304,8 @@ export async function getAssistantData() {
   if (!user) return { sessionId: 'demo-session', messages: [] };
   const sessionId = `session-${user.id}`;
   return { sessionId, messages: await getAssistantMessages(user.id, sessionId) };
+}
+
+export async function getPeerAlertData(city: string) {
+  return { peerReports: await getPeerAlertReports(city) };
 }

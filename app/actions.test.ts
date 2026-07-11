@@ -20,8 +20,10 @@ const mocks = vi.hoisted(() => ({
   getChecklistMock: vi.fn(),
   getLatestPlanMock: vi.fn(),
   getLatestTravelAdvisoryMock: vi.fn(),
+  getPeerAlertReportsMock: vi.fn(),
   getResourcesMock: vi.fn(),
   saveAssistantMessageMock: vi.fn(),
+  savePeerAlertReportMock: vi.fn(),
   savePreparednessPlanMock: vi.fn(),
   saveTravelAdvisoryMock: vi.fn(),
   toggleChecklistItemMock: vi.fn(),
@@ -52,8 +54,10 @@ vi.mock('@/lib/repository', () => ({
   getChecklist: mocks.getChecklistMock,
   getLatestPlan: mocks.getLatestPlanMock,
   getLatestTravelAdvisory: mocks.getLatestTravelAdvisoryMock,
+  getPeerAlertReports: mocks.getPeerAlertReportsMock,
   getResources: mocks.getResourcesMock,
   saveAssistantMessage: mocks.saveAssistantMessageMock,
+  savePeerAlertReport: mocks.savePeerAlertReportMock,
   savePreparednessPlan: mocks.savePreparednessPlanMock,
   saveTravelAdvisory: mocks.saveTravelAdvisoryMock,
   toggleChecklistItem: mocks.toggleChecklistItemMock,
@@ -72,9 +76,11 @@ import {
   generateTravelAdviceAction,
   getAssistantData,
   getHomeData,
+  getPeerAlertData,
   getTravelData,
   loginAction,
   logoutAction,
+  reportPeerAlertAction,
   signupAction,
   toggleChecklistAction,
   type PlanActionState,
@@ -237,6 +243,49 @@ describe('app actions integration', () => {
     expect(result.message).toContain('fallback');
   });
 
+  it('requires authentication before accepting peer alerts', async () => {
+    mocks.getSessionUserMock.mockResolvedValue(null);
+
+    const result = await reportPeerAlertAction(initialState, formDataFrom({
+      city: 'Bengaluru',
+      type: 'road_block',
+      severity: 'moderate',
+      description: 'Road blocked by a fallen tree near the flyover.',
+      latitude: '12.9352',
+      longitude: '77.6205',
+    }));
+
+    expect(result.status).toBe('error');
+    expect(mocks.savePeerAlertReportMock).not.toHaveBeenCalled();
+  });
+
+  it('saves peer alerts and revalidates the alerts page', async () => {
+    mocks.getSessionUserMock.mockResolvedValue({ id: 'user-1', email: 'citizen@mausamog.gov', fullName: 'Citizen User' });
+    mocks.getRedisMock.mockReturnValue(null);
+
+    const result = await reportPeerAlertAction(initialState, formDataFrom({
+      city: 'Bengaluru',
+      type: 'road_block',
+      severity: 'high',
+      description: 'Road blocked by a landslide near the service road.',
+      latitude: '12.9352',
+      longitude: '77.6205',
+      accuracyMeters: '42',
+    }));
+
+    expect(mocks.savePeerAlertReportMock).toHaveBeenCalledWith({
+      city: 'Bengaluru',
+      type: 'road_block',
+      severity: 'high',
+      description: 'Road blocked by a landslide near the service road.',
+      latitude: 12.9352,
+      longitude: 77.6205,
+      accuracyMeters: 42,
+    }, 'user-1');
+    expect(mocks.revalidatePathMock).toHaveBeenCalledWith('/alerts');
+    expect(result.status).toBe('success');
+  });
+
   it('returns empty home data for anonymous users', async () => {
     mocks.getSessionUserMock.mockResolvedValue(null);
 
@@ -263,6 +312,14 @@ describe('app actions integration', () => {
     expect(assistant.sessionId).toBe('session-user-1');
     expect(assistant.messages).toHaveLength(1);
     expect(travel.advisory).toEqual({ id: 'travel-1' });
+  });
+
+  it('returns peer alert data for a city', async () => {
+    mocks.getPeerAlertReportsMock.mockResolvedValue([{ id: 'peer-1', city: 'Bengaluru' }]);
+
+    const result = await getPeerAlertData('Bengaluru');
+
+    expect(result.peerReports).toEqual([{ id: 'peer-1', city: 'Bengaluru' }]);
   });
 
   it('deletes the session cookie and redirects on logout', async () => {

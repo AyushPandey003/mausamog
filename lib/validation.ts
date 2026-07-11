@@ -62,3 +62,13 @@ export const signupSchema = z.object({
 export const loginSchema = z.object({
   email: z.string().trim().email().max(120),
 });
+
+export const peerAlertReportSchema = z.object({
+  city: z.string().trim().min(2).max(80),
+  type: z.enum(["landslide", "road_block", "waterlogging", "tree_fall", "power_line", "other"]),
+  severity: z.enum(["low", "moderate", "high"]),
+  description: z.string().trim().min(8).max(220),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  accuracyMeters: z.coerce.number().min(0).max(5000).optional(),
+});

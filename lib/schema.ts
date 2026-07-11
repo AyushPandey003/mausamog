@@ -49,6 +49,25 @@ export type TravelAdvisory = {
   avoidIf: string[];
 };
 
+export type PeerAlertType = "landslide" | "road_block" | "waterlogging" | "tree_fall" | "power_line" | "other";
+
+export type PeerAlertReportInput = {
+  city: string;
+  type: PeerAlertType;
+  severity: "low" | "moderate" | "high";
+  description: string;
+  latitude: number;
+  longitude: number;
+  accuracyMeters?: number;
+};
+
+export type PeerAlertReport = PeerAlertReportInput & {
+  id: string;
+  reporterId: string;
+  createdAt: string;
+  source: "peer";
+};
+
 export const appUsers = pgTable("app_users", {
   id: uuid("id").defaultRandom().primaryKey(),
   fullName: varchar("full_name", { length: 120 }).notNull(),

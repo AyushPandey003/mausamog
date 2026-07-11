@@ -1,12 +1,32 @@
 import { and, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import alertsSeed from "../data/seed/alerts.json";
 import checklistSeed from "../data/seed/checklist.json";
 import resourcesSeed from "../data/seed/resources.json";
 import { getDb } from "./db";
 import { getRedis } from "./redis";
-import { appUsers, assistantMessages, authMagicLinks, authSessions, checklistProgress, citizenProfiles, localResources, preparednessPlans, travelAdvisories, weatherAlerts, type PreparednessInput, type PreparednessPlan, type TravelAdvisory, type WeatherContext } from "./schema";
+import {
+  appUsers,
+  assistantMessages,
+  authMagicLinks,
+  authSessions,
+  checklistProgress,
+  citizenProfiles,
+  localResources,
+  preparednessPlans,
+  travelAdvisories,
+  weatherAlerts,
+  type PeerAlertReport,
+  type PeerAlertReportInput,
+  type PreparednessInput,
+  type PreparednessPlan,
+  type TravelAdvisory,
+  type WeatherContext,
+} from "./schema";
 
 let schemaReady: Promise<void> | null = null;
+const memoryPeerReports = new Map<string, PeerAlertReport[]>();
+const PEER_REPORT_LIMIT = 40;
 
 function normalizeCity(city: string) {
   return city.trim().toLowerCase();
@@ -15,6 +35,10 @@ function normalizeCity(city: string) {
 function seedRowsForCity<T extends { city: string }>(rows: T[], city: string) {
   const normalizedCity = normalizeCity(city);
   return rows.filter((item) => normalizeCity(item.city) === normalizedCity);
+}
+
+function peerReportsKey(city: string) {
+  return `peer-alerts:${normalizeCity(city)}`;
 }
 
 async function findChecklistProgress(city: string, itemKey: string, userId: string) {
@@ -199,6 +223,42 @@ export async function getAlerts(city: string) {
   const result = rows.length ? rows : seededAlerts;
   if (redis) await redis.set(cacheKey, result, { ex: 60 * 10 });
   return result;
+}
+
+export async function getPeerAlertReports(city: string) {
+  const redis = getRedis();
+  const key = peerReportsKey(city);
+
+  if (redis) {
+    const reports = await redis.lrange<PeerAlertReport>(key, 0, PEER_REPORT_LIMIT - 1);
+    return reports ?? [];
+  }
+
+  return memoryPeerReports.get(key) ?? [];
+}
+
+export async function savePeerAlertReport(input: PeerAlertReportInput, reporterId: string) {
+  const report: PeerAlertReport = {
+    ...input,
+    id: randomUUID(),
+    reporterId,
+    createdAt: new Date().toISOString(),
+    source: "peer",
+  };
+
+  const redis = getRedis();
+  const key = peerReportsKey(input.city);
+
+  if (redis) {
+    await redis.lpush(key, report);
+    await redis.ltrim(key, 0, PEER_REPORT_LIMIT - 1);
+    await redis.expire(key, 60 * 60 * 12);
+    return report;
+  }
+
+  const reports = [report, ...(memoryPeerReports.get(key) ?? [])].slice(0, PEER_REPORT_LIMIT);
+  memoryPeerReports.set(key, reports);
+  return report;
 }
 
 export async function getChecklist(city: string, userId: string) {
