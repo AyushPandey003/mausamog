@@ -40,3 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 client_secret_2_193116445097-76cn1unoirvjj7l7s1h37p8ih405hu27.apps.googleusercontent.com.json
+lib/auth.session.test.ts
